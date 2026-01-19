@@ -141,36 +141,36 @@ export default function Game() {
         onClick={handleTap}
       >
         {/* Top UI Bar */}
-        <div className="absolute top-0 left-0 right-0 p-4 z-10 flex flex-col gap-2 pointer-events-none">
-          <div className="flex justify-between items-start">
-            {/* Island Indicator */}
-            <div className="bg-white/90 backdrop-blur rounded-full px-4 py-1.5 flex items-center gap-2 shadow-sm border border-black/5">
-              <MapPin className="w-4 h-4 text-blue-500" />
-              <span className="font-bold text-slate-700 font-display">Island {currentIsland}</span>
-            </div>
-
-            {/* Money / Fuel Target */}
-            <div className="flex flex-col items-end">
-              <div className="bg-white/90 backdrop-blur rounded-2xl px-4 py-2 shadow-lg border-2 border-green-500/20 flex flex-col items-end">
-                <div className="flex items-center gap-1">
-                  <DollarSign className="w-4 h-4 text-green-600" />
-                  <span className="text-2xl font-mono font-bold text-green-700 leading-none">{score}</span>
-                </div>
-                <div className="text-xs font-bold text-slate-400 mt-1">
-                  Target: ${fuelCost}
-                </div>
-              </div>
+        <div className="absolute top-0 left-0 right-0 p-4 z-10 flex justify-between items-start pointer-events-none">
+          {/* Time Bubble */}
+          <div className="bg-[#99E5FF] border-2 border-white rounded-2xl px-3 py-1.5 shadow-md flex items-center gap-2">
+            <Clock className="w-5 h-5 text-white fill-[#FFB347]" />
+            <div className="flex flex-col leading-none">
+              <span className="text-[10px] font-bold text-white uppercase">Time:</span>
+              <span className="text-xl font-display font-bold text-white">
+                00:{timeLeft.toString().padStart(2, '0')}
+              </span>
             </div>
           </div>
 
-          {/* Timer Center */}
-          <div className="flex justify-center -mt-4">
-             <div className={`
-               px-4 py-1 rounded-b-xl font-mono font-bold text-xl shadow-md border-t-0 border-2
-               ${timeLeft < 10 ? 'bg-red-500 text-white border-red-600 animate-pulse' : 'bg-white text-slate-700 border-white'}
-             `}>
-               00:{timeLeft.toString().padStart(2, '0')}
-             </div>
+          {/* Coins Bubble */}
+          <div className="bg-[#99E5FF] border-2 border-white rounded-2xl px-3 py-1.5 shadow-md flex items-center gap-2">
+            <DollarSign className="w-5 h-5 text-white fill-[#FFD700]" />
+            <div className="flex flex-col leading-none">
+              <span className="text-[10px] font-bold text-white uppercase">Coins:</span>
+              <span className="text-xl font-display font-bold text-white">{score}</span>
+            </div>
+          </div>
+
+          {/* Fuel Target Bubble */}
+          <div className="bg-[#99E5FF] border-2 border-white rounded-2xl px-3 py-1.5 shadow-md flex items-center gap-2">
+            <div className="w-5 h-5 bg-[#FF6B6B] rounded-sm flex items-center justify-center">
+              <div className="w-2 h-3 bg-white rounded-full opacity-50" />
+            </div>
+            <div className="flex flex-col leading-none">
+              <span className="text-[10px] font-bold text-white uppercase">Fuel Target:</span>
+              <span className="text-xl font-display font-bold text-white">{fuelCost}</span>
+            </div>
           </div>
         </div>
 

@@ -1,7 +1,7 @@
 import { type GameState, type Entity, type FishClass, OBJECT_MATRIX } from "./types";
 
-export const CANVAS_WIDTH = 450; // virtual width
-export const CANVAS_HEIGHT = 800; // virtual height
+export const CANVAS_WIDTH = 450;
+export const CANVAS_HEIGHT = 800;
 export const SEA_LEVEL_Y = CANVAS_HEIGHT * 0.25;
 
 export class GameEngine {
@@ -211,60 +211,62 @@ export class GameEngine {
   private draw() {
     this.ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-    // 1. Draw Sky (25%)
-    const gradient = this.ctx.createLinearGradient(0, 0, 0, SEA_LEVEL_Y);
-    gradient.addColorStop(0, '#bae6fd');
-    gradient.addColorStop(1, '#f0f9ff');
-    this.ctx.fillStyle = gradient;
+    // 1. Draw Sky (25%) - Lighter blue from image
+    this.ctx.fillStyle = '#99E5FF';
     this.ctx.fillRect(0, 0, CANVAS_WIDTH, SEA_LEVEL_Y);
 
+    // Draw Sun
+    this.drawSun(CANVAS_WIDTH - 60, 50);
+
+    // Draw Clouds
+    this.drawCloud(60, 40, 40);
+    this.drawCloud(150, 60, 30);
+
     // 2. Draw Sea (75%)
-    this.ctx.fillStyle = '#006994';
+    this.ctx.fillStyle = '#4DB8FF';
     this.ctx.fillRect(0, SEA_LEVEL_Y, CANVAS_WIDTH, CANVAS_HEIGHT - SEA_LEVEL_Y);
     
-    // Water shine
-    this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-    this.ctx.lineWidth = 2;
-    for(let i=0; i<10; i++) {
-        const y = SEA_LEVEL_Y + 20 + i * 50;
-        const offset = (Date.now() / 50 + i * 30) % CANVAS_WIDTH;
-        this.ctx.beginPath();
-        this.ctx.moveTo(offset, y);
-        this.ctx.lineTo(offset + 50, y);
-        this.ctx.stroke();
-    }
+    // Bottom Sand
+    this.ctx.fillStyle = '#FFE1A1';
+    this.ctx.fillRect(0, CANVAS_HEIGHT - 60, CANVAS_WIDTH, 60);
 
-    // 3. Draw Boat
-    this.ctx.fillStyle = '#8B4513';
+    // Draw Sea Line
+    this.ctx.strokeStyle = '#FFFFFF';
+    this.ctx.lineWidth = 4;
     this.ctx.beginPath();
-    this.ctx.arc(CANVAS_WIDTH / 2, SEA_LEVEL_Y - 10, 40, 0, Math.PI, false);
+    this.ctx.moveTo(0, SEA_LEVEL_Y);
+    this.ctx.lineTo(CANVAS_WIDTH, SEA_LEVEL_Y);
+    this.ctx.stroke();
+
+    // 3. Draw Boat (Chibi style)
+    this.ctx.fillStyle = '#D4A373';
+    this.ctx.strokeStyle = '#5c2d0c';
+    this.ctx.lineWidth = 3;
+    this.ctx.beginPath();
+    this.ctx.arc(CANVAS_WIDTH / 2, SEA_LEVEL_Y - 5, 50, 0, Math.PI, false);
+    this.ctx.closePath();
     this.ctx.fill();
+    this.ctx.stroke();
     
-    // 4. Draw Fisherman
-    this.ctx.fillStyle = '#fca5a5';
-    this.ctx.beginPath();
-    this.ctx.arc(CANVAS_WIDTH / 2, SEA_LEVEL_Y - 30, 10, 0, Math.PI * 2);
-    this.ctx.fill();
+    // 4. Draw Fisherman (Chibi boy)
+    this.drawFisherman();
 
     // 5. Draw Hook Line
-    this.ctx.strokeStyle = '#ffffff';
-    this.ctx.lineWidth = 1.5;
+    this.ctx.strokeStyle = '#333333';
+    this.ctx.lineWidth = 2;
     this.ctx.beginPath();
-    this.ctx.moveTo(CANVAS_WIDTH / 2, SEA_LEVEL_Y - 30);
+    this.ctx.moveTo(CANVAS_WIDTH / 2, SEA_LEVEL_Y - 40);
     this.ctx.lineTo(this.state.hook.x, this.state.hook.y);
     this.ctx.stroke();
 
-    // 6. Draw Hook Head
-    this.ctx.fillStyle = '#aaa';
-    this.ctx.beginPath();
-    this.ctx.arc(this.state.hook.x, this.state.hook.y, 6, 0, Math.PI * 2);
-    this.ctx.fill();
+    // 6. Draw Hook Head (Classic metal hook)
+    this.drawHookHead(this.state.hook.x, this.state.hook.y);
 
     // 7. Draw Caught Entity
     if (this.state.hook.caughtEntity) {
       const entity = this.state.hook.caughtEntity;
       entity.x = this.state.hook.x;
-      entity.y = this.state.hook.y + 10;
+      entity.y = this.state.hook.y + 15;
       this.drawEntity(entity.x, entity.y, entity.radius, entity.color, entity.type, true);
     }
 
@@ -274,37 +276,109 @@ export class GameEngine {
     }
   }
 
+  private drawSun(x: number, y: number) {
+    this.ctx.fillStyle = '#FFD700';
+    this.ctx.strokeStyle = '#FFA500';
+    this.ctx.lineWidth = 3;
+    this.ctx.beginPath();
+    this.ctx.arc(x, y, 25, 0, Math.PI * 2);
+    this.ctx.fill();
+    this.ctx.stroke();
+
+    // Smiling face
+    this.ctx.fillStyle = '#333';
+    this.ctx.beginPath();
+    this.ctx.arc(x - 8, y - 5, 2, 0, Math.PI * 2);
+    this.ctx.arc(x + 8, y - 5, 2, 0, Math.PI * 2);
+    this.ctx.fill();
+    this.ctx.beginPath();
+    this.ctx.arc(x, y + 5, 8, 0.1 * Math.PI, 0.9 * Math.PI);
+    this.ctx.stroke();
+  }
+
+  private drawCloud(x: number, y: number, r: number) {
+    this.ctx.fillStyle = '#FFFFFF';
+    this.ctx.beginPath();
+    this.ctx.arc(x, y, r, 0, Math.PI * 2);
+    this.ctx.arc(x + r, y - r/2, r * 0.8, 0, Math.PI * 2);
+    this.ctx.arc(x - r, y - r/2, r * 0.8, 0, Math.PI * 2);
+    this.ctx.fill();
+  }
+
+  private drawFisherman() {
+    const x = CANVAS_WIDTH / 2;
+    const y = SEA_LEVEL_Y - 40;
+    
+    // Head
+    this.ctx.fillStyle = '#FFE0BD';
+    this.ctx.beginPath();
+    this.ctx.arc(x, y - 20, 20, 0, Math.PI * 2);
+    this.ctx.fill();
+    
+    // Hair (Brown)
+    this.ctx.fillStyle = '#5D4037';
+    this.ctx.beginPath();
+    this.ctx.arc(x, y - 30, 22, Math.PI, 0);
+    this.ctx.fill();
+
+    // Eyes
+    this.ctx.fillStyle = '#333';
+    this.ctx.beginPath();
+    this.ctx.arc(x - 7, y - 20, 3, 0, Math.PI * 2);
+    this.ctx.arc(x + 7, y - 20, 3, 0, Math.PI * 2);
+    this.ctx.fill();
+
+    // Body (White shirt)
+    this.ctx.fillStyle = '#FFFFFF';
+    this.ctx.fillRect(x - 15, y, 30, 25);
+  }
+
+  private drawHookHead(x: number, y: number) {
+    this.ctx.strokeStyle = '#555';
+    this.ctx.lineWidth = 3;
+    this.ctx.beginPath();
+    this.ctx.arc(x, y - 5, 8, 0, Math.PI * 0.8);
+    this.ctx.stroke();
+  }
+
   private drawEntity(x: number, y: number, radius: number, color: string, type: FishClass, isCaught: boolean = false) {
-    this.ctx.fillStyle = color;
     this.ctx.save();
     this.ctx.translate(x, y);
-    if (isCaught) {
-       this.ctx.rotate(Math.PI / 2);
-    }
+    if (isCaught) this.ctx.rotate(Math.PI / 2);
+
+    this.ctx.fillStyle = color;
+    this.ctx.strokeStyle = '#FFFFFF';
+    this.ctx.lineWidth = 3;
 
     if (type === 'trash') {
         this.ctx.beginPath();
-        this.ctx.moveTo(-radius, 0);
-        this.ctx.lineTo(-radius/2, -radius);
-        this.ctx.lineTo(radius/2, -radius*0.8);
-        this.ctx.lineTo(radius, 0);
-        this.ctx.lineTo(radius/2, radius*0.8);
-        this.ctx.lineTo(-radius/2, radius);
-        this.ctx.closePath();
+        this.ctx.arc(0, 0, radius, 0, Math.PI * 2);
         this.ctx.fill();
-    } else if (type === 'legendary') {
-       this.ctx.fillRect(-radius, -radius/1.5, radius*2, radius*1.5);
-       this.ctx.strokeStyle = '#e9ecef';
-       this.ctx.lineWidth = 2;
-       this.ctx.strokeRect(-radius, -radius/1.5, radius*2, radius*1.5);
+        this.ctx.stroke();
     } else {
+        // Fish Body
         this.ctx.beginPath();
         this.ctx.ellipse(0, 0, radius * 1.5, radius, 0, 0, Math.PI * 2);
         this.ctx.fill();
+        this.ctx.stroke();
+        
+        // Tail
         this.ctx.beginPath();
-        this.ctx.moveTo(radius, 0);
-        this.ctx.lineTo(radius + 10, -10);
-        this.ctx.lineTo(radius + 10, 10);
+        this.ctx.moveTo(radius * 1.2, 0);
+        this.ctx.lineTo(radius * 1.2 + 15, -15);
+        this.ctx.lineTo(radius * 1.2 + 15, 15);
+        this.ctx.closePath();
+        this.ctx.fill();
+        this.ctx.stroke();
+
+        // Eye (Cute big eyes)
+        this.ctx.fillStyle = 'white';
+        this.ctx.beginPath();
+        this.ctx.arc(-radius * 0.7, -radius * 0.2, 7, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.fillStyle = 'black';
+        this.ctx.beginPath();
+        this.ctx.arc(-radius * 0.7, -radius * 0.2, 4, 0, Math.PI * 2);
         this.ctx.fill();
     }
 
