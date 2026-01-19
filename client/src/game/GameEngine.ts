@@ -11,6 +11,8 @@ export class GameEngine {
   private onGameOver: (score: number, island: number) => void;
   private onScoreUpdate: (score: number) => void;
   private onIslandComplete: (island: number) => void;
+  private arrivalProgress: number = 0;
+  private isArriving: boolean = false;
 
   constructor(
     ctx: CanvasRenderingContext2D, 
@@ -30,6 +32,8 @@ export class GameEngine {
 
   start() {
     this.state.isPlaying = true;
+    this.isArriving = false;
+    this.arrivalProgress = 0;
     this.lastFrameTime = performance.now();
     this.loop();
   }
@@ -39,7 +43,7 @@ export class GameEngine {
   }
 
   handleInput() {
-    if (this.state.hook.state === 'idle') {
+    if (this.state.hook.state === 'idle' && !this.isArriving) {
       this.state.hook.state = 'shooting';
     }
   }
@@ -57,10 +61,21 @@ export class GameEngine {
   };
 
   private update(deltaTime: number) {
+    if (this.isArriving) {
+      this.arrivalProgress += deltaTime / 2000;
+      if (this.arrivalProgress >= 1) {
+        this.arrivalProgress = 1;
+        this.state.isPlaying = false;
+        this.onIslandComplete(this.state.island);
+      }
+      return;
+    }
+
     if (this.state.timeRemaining > 0) {
       this.state.timeRemaining -= deltaTime / 1000;
     } else {
-      this.checkIslandProgress();
+      this.isArriving = true;
+      this.state.hook.state = 'idle';
     }
 
     this.updateHook(deltaTime);
@@ -73,9 +88,6 @@ export class GameEngine {
     const baseSpeed = 0.5;
 
     if (hook.state === 'idle') {
-      // Pendulum: -90 to +90 deg relative to vertical down.
-      // Vertical down is Math.PI / 2.
-      // Range: 0 (right) to Math.PI (left)
       const minAngle = 0; 
       const maxAngle = Math.PI;
       
@@ -121,7 +133,12 @@ export class GameEngine {
     } 
     else if (hook.state === 'retracting') {
       let vBase = baseSpeed * 1.5;
-      let weight = hook.caughtEntity ? hook.caughtEntity.weight : 1.0;
+      let weightMult = hook.caughtEntity ? hook.caughtEntity.weight : 1.0;
+      
+      // Upgrade application: Rod Level reduces weight penalty
+      const weightBonus = (this.state.upgrades.rodLevel - 1) * 0.2;
+      const weight = Math.max(1, weightMult - weightBonus);
+      
       let retractSpeed = (vBase / weight) * deltaTime;
 
       hook.length -= retractSpeed;
@@ -131,8 +148,12 @@ export class GameEngine {
         hook.state = 'idle';
         
         if (hook.caughtEntity) {
-          this.state.score += hook.caughtEntity.value;
-          this.onScoreUpdate(this.state.score);
+          this.state.inventory.push({
+            id: Math.random().toString(),
+            type: hook.caughtEntity.type,
+            name: hook.caughtEntity.name,
+            value: hook.caughtEntity.value
+          });
           hook.caughtEntity = null;
         }
       } else {
@@ -144,22 +165,22 @@ export class GameEngine {
 
   private updateFishes(deltaTime: number) {
     const levelSpeedBonus = (this.state.island - 1) * 0.1;
+    // Boat upgrade bonus: can increase luck or reduce speed difficulty, but here we just flow
+    const travelSpeed = 2 + levelSpeedBonus;
 
     for (let i = this.state.fishes.length - 1; i >= 0; i--) {
       const fish = this.state.fishes[i];
-      // fish.direction: 1 moves right, -1 moves left
-      fish.x += (fish.speed + levelSpeedBonus) * fish.direction * (deltaTime / 16);
+      // All entities flow left due to relative motion
+      fish.x -= (fish.speed + travelSpeed) * (deltaTime / 16);
 
-      if (fish.direction === 1 && fish.x > CANVAS_WIDTH + 50) {
-        this.state.fishes.splice(i, 1);
-      } else if (fish.direction === -1 && fish.x < -50) {
+      if (fish.x < -100) {
         this.state.fishes.splice(i, 1);
       }
     }
   }
 
   private spawnFishes(deltaTime: number) {
-    const spawnChance = 0.02 + (this.state.island * 0.005);
+    const spawnChance = 0.03 + (this.state.island * 0.005);
     
     if (Math.random() < spawnChance) {
       const rand = Math.random();
@@ -176,49 +197,36 @@ export class GameEngine {
       const color = config.colors[Math.floor(Math.random() * config.colors.length)];
       
       const speed = 1.0 * config.speedMultiplier;
-      const y = SEA_LEVEL_Y + 50 + Math.random() * (CANVAS_HEIGHT - SEA_LEVEL_Y - 100);
+      const y = SEA_LEVEL_Y + 50 + Math.random() * (CANVAS_HEIGHT - SEA_LEVEL_Y - 150);
       
-      // Spawn from left or right
-      const direction = Math.random() > 0.5 ? 1 : -1;
-      const x = direction === 1 ? -50 : CANVAS_WIDTH + 50;
-
       this.state.fishes.push({
         id: Math.random(),
         type: fishClass,
         name,
-        x,
+        x: CANVAS_WIDTH + 100,
         y,
         speed,
         value: config.value,
         weight: config.weightMultiplier,
         color,
         radius: config.radius,
-        direction
+        direction: -1
       });
     }
   }
 
   private checkIslandProgress() {
-    if (this.state.score >= this.state.fuelCost) {
-      this.state.isPlaying = false;
-      this.onIslandComplete(this.state.island);
-    } else {
-      this.state.isPlaying = false;
-      this.onGameOver(this.state.score, this.state.island);
-    }
+    // Moved logic to update isArriving
   }
 
   private draw() {
     this.ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-    // 1. Draw Sky (25%) - Lighter blue from image
+    // 1. Draw Sky (25%)
     this.ctx.fillStyle = '#99E5FF';
     this.ctx.fillRect(0, 0, CANVAS_WIDTH, SEA_LEVEL_Y);
 
-    // Draw Sun
     this.drawSun(CANVAS_WIDTH - 60, 50);
-
-    // Draw Clouds
     this.drawCloud(60, 40, 40);
     this.drawCloud(150, 60, 30);
 
@@ -230,15 +238,25 @@ export class GameEngine {
     this.ctx.fillStyle = '#FFE1A1';
     this.ctx.fillRect(0, CANVAS_HEIGHT - 60, CANVAS_WIDTH, 60);
 
-    // Draw Sea Line
-    this.ctx.strokeStyle = '#FFFFFF';
-    this.ctx.lineWidth = 4;
-    this.ctx.beginPath();
-    this.ctx.moveTo(0, SEA_LEVEL_Y);
-    this.ctx.lineTo(CANVAS_WIDTH, SEA_LEVEL_Y);
-    this.ctx.stroke();
+    // Draw Arrival Island
+    if (this.isArriving) {
+      const islandX = CANVAS_WIDTH - (this.arrivalProgress * 150);
+      this.ctx.fillStyle = '#4CAF50';
+      this.ctx.beginPath();
+      this.ctx.moveTo(islandX, SEA_LEVEL_Y);
+      this.ctx.lineTo(islandX + 200, SEA_LEVEL_Y);
+      this.ctx.lineTo(islandX + 200, CANVAS_HEIGHT);
+      this.ctx.lineTo(islandX - 50, CANVAS_HEIGHT);
+      this.ctx.closePath();
+      this.ctx.fill();
+    }
 
-    // 3. Draw Boat (Chibi style)
+    // 3. Draw Boat
+    this.ctx.save();
+    if (this.isArriving) {
+      this.ctx.translate(this.arrivalProgress * 100, 0);
+    }
+    
     this.ctx.fillStyle = '#D4A373';
     this.ctx.strokeStyle = '#5c2d0c';
     this.ctx.lineWidth = 3;
@@ -248,10 +266,7 @@ export class GameEngine {
     this.ctx.fill();
     this.ctx.stroke();
     
-    // 4. Draw Fisherman (Chibi boy)
     this.drawFisherman();
-
-    // Draw Fishing Rod (visual indicator of the swing)
     this.drawFishingRod();
 
     // 5. Draw Hook Line
@@ -262,16 +277,16 @@ export class GameEngine {
     this.ctx.lineTo(this.state.hook.x, this.state.hook.y);
     this.ctx.stroke();
 
-    // 6. Draw Hook Head (Classic metal hook)
     this.drawHookHead(this.state.hook.x, this.state.hook.y);
 
-    // 7. Draw Caught Entity
     if (this.state.hook.caughtEntity) {
       const entity = this.state.hook.caughtEntity;
       entity.x = this.state.hook.x;
       entity.y = this.state.hook.y + 15;
       this.drawEntity(entity.x, entity.y, entity.radius, entity.color, entity.type, true);
     }
+    
+    this.ctx.restore();
 
     // 8. Draw Swimming Entities
     for (const fish of this.state.fishes) {
@@ -288,7 +303,6 @@ export class GameEngine {
     this.ctx.fill();
     this.ctx.stroke();
 
-    // Smiling face
     this.ctx.fillStyle = '#333';
     this.ctx.beginPath();
     this.ctx.arc(x - 8, y - 5, 2, 0, Math.PI * 2);
@@ -311,27 +325,19 @@ export class GameEngine {
   private drawFisherman() {
     const x = CANVAS_WIDTH / 2;
     const y = SEA_LEVEL_Y - 40;
-    
-    // Head
     this.ctx.fillStyle = '#FFE0BD';
     this.ctx.beginPath();
     this.ctx.arc(x, y - 20, 20, 0, Math.PI * 2);
     this.ctx.fill();
-    
-    // Hair (Brown)
     this.ctx.fillStyle = '#5D4037';
     this.ctx.beginPath();
     this.ctx.arc(x, y - 30, 22, Math.PI, 0);
     this.ctx.fill();
-
-    // Eyes
     this.ctx.fillStyle = '#333';
     this.ctx.beginPath();
     this.ctx.arc(x - 7, y - 20, 3, 0, Math.PI * 2);
     this.ctx.arc(x + 7, y - 20, 3, 0, Math.PI * 2);
     this.ctx.fill();
-
-    // Body (White shirt)
     this.ctx.fillStyle = '#FFFFFF';
     this.ctx.fillRect(x - 15, y, 30, 25);
   }
@@ -340,12 +346,9 @@ export class GameEngine {
     const x = CANVAS_WIDTH / 2;
     const y = SEA_LEVEL_Y - 40;
     const rodLength = 40;
-    
     this.ctx.save();
     this.ctx.translate(x, y);
-    this.ctx.rotate(this.state.hook.angle - Math.PI / 2); // Rotate based on current hook angle
-    
-    // Draw the rod
+    this.ctx.rotate(this.state.hook.angle - Math.PI / 2);
     this.ctx.strokeStyle = '#8B4513';
     this.ctx.lineWidth = 4;
     this.ctx.lineCap = 'round';
@@ -353,7 +356,6 @@ export class GameEngine {
     this.ctx.moveTo(0, 0);
     this.ctx.lineTo(0, rodLength);
     this.ctx.stroke();
-    
     this.ctx.restore();
   }
 
@@ -379,14 +381,14 @@ export class GameEngine {
         this.ctx.arc(0, 0, radius, 0, Math.PI * 2);
         this.ctx.fill();
         this.ctx.stroke();
+    } else if (type === 'legendary') {
+       this.ctx.fillRect(-radius, -radius/1.5, radius*2, radius*1.5);
+       this.ctx.strokeRect(-radius, -radius/1.5, radius*2, radius*1.5);
     } else {
-        // Fish Body
         this.ctx.beginPath();
         this.ctx.ellipse(0, 0, radius * 1.5, radius, 0, 0, Math.PI * 2);
         this.ctx.fill();
         this.ctx.stroke();
-        
-        // Tail
         this.ctx.beginPath();
         this.ctx.moveTo(radius * 1.2, 0);
         this.ctx.lineTo(radius * 1.2 + 15, -15);
@@ -394,8 +396,6 @@ export class GameEngine {
         this.ctx.closePath();
         this.ctx.fill();
         this.ctx.stroke();
-
-        // Eye (Cute big eyes)
         this.ctx.fillStyle = 'white';
         this.ctx.beginPath();
         this.ctx.arc(-radius * 0.7, -radius * 0.2, 7, 0, Math.PI * 2);
@@ -405,7 +405,6 @@ export class GameEngine {
         this.ctx.arc(-radius * 0.7, -radius * 0.2, 4, 0, Math.PI * 2);
         this.ctx.fill();
     }
-
     this.ctx.restore();
   }
 }

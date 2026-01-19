@@ -1,5 +1,12 @@
 export type FishClass = 'trash' | 'common' | 'rare' | 'epic' | 'legendary';
 
+export interface InventoryItem {
+  id: string;
+  type: FishClass;
+  name: string;
+  value: number;
+}
+
 export interface Entity {
   id: number;
   type: FishClass;
@@ -8,17 +15,17 @@ export interface Entity {
   y: number;
   speed: number;
   value: number;
-  weight: number; // Multiplier
+  weight: number; 
   color: string;
   radius: number;
-  direction: 1 | -1; // 1 = moving right, -1 = moving left
+  direction: 1 | -1; 
 }
 
 export interface Hook {
-  angle: number; // in radians
+  angle: number; 
   length: number;
   state: 'idle' | 'shooting' | 'retracting';
-  direction: 1 | -1; // 1 = right, -1 = left (oscillation direction)
+  direction: 1 | -1; 
   x: number;
   y: number;
   caughtEntity: Entity | null;
@@ -32,6 +39,12 @@ export interface GameState {
   isPlaying: boolean;
   hook: Hook;
   fishes: Entity[];
+  inventory: InventoryItem[];
+  upgrades: {
+    rodLevel: number;
+    boatLevel: number;
+    hasFuel: boolean;
+  };
 }
 
 export const OBJECT_MATRIX: Record<FishClass, {
