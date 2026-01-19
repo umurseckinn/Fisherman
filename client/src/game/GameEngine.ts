@@ -57,37 +57,41 @@ export class GameEngine {
   };
 
   private update(deltaTime: number) {
-    // 1. Update Timer
     if (this.state.timeRemaining > 0) {
       this.state.timeRemaining -= deltaTime / 1000;
     } else {
       this.checkIslandProgress();
     }
 
-    // 2. Update Hook
     this.updateHook(deltaTime);
-
-    // 3. Update Fishes
     this.updateFishes(deltaTime);
-
-    // 4. Spawner
     this.spawnFishes(deltaTime);
   }
 
   private updateHook(deltaTime: number) {
     const hook = this.state.hook;
-    const baseSpeed = 0.5; // Base speed per ms
+    const baseSpeed = 0.5;
 
     if (hook.state === 'idle') {
-      const minAngle = Math.PI * 0.1;
-      const maxAngle = Math.PI * 0.9;
+      // Pendulum: -90 to +90 deg relative to vertical down.
+      // Vertical down is Math.PI / 2.
+      // Range: 0 (right) to Math.PI (left)
+      const minAngle = 0; 
+      const maxAngle = Math.PI;
       
+      const oscillationSpeed = 0.0015;
       if (hook.direction === 1) {
-        hook.angle += 0.002 * deltaTime;
-        if (hook.angle >= maxAngle) hook.direction = -1;
+        hook.angle += oscillationSpeed * deltaTime;
+        if (hook.angle >= maxAngle) {
+          hook.angle = maxAngle;
+          hook.direction = -1;
+        }
       } else {
-        hook.angle -= 0.002 * deltaTime;
-        if (hook.angle <= minAngle) hook.direction = 1;
+        hook.angle -= oscillationSpeed * deltaTime;
+        if (hook.angle <= minAngle) {
+          hook.angle = minAngle;
+          hook.direction = 1;
+        }
       }
       
       hook.x = CANVAS_WIDTH / 2;
@@ -139,15 +143,16 @@ export class GameEngine {
   }
 
   private updateFishes(deltaTime: number) {
-    // Level difficulty increment
     const levelSpeedBonus = (this.state.island - 1) * 0.1;
 
     for (let i = this.state.fishes.length - 1; i >= 0; i--) {
       const fish = this.state.fishes[i];
-      // Move left: base speed + level bonus
-      fish.x -= (fish.speed + levelSpeedBonus) * (deltaTime / 16);
+      // fish.direction: 1 moves right, -1 moves left
+      fish.x += (fish.speed + levelSpeedBonus) * fish.direction * (deltaTime / 16);
 
-      if (fish.x < -50) {
+      if (fish.direction === 1 && fish.x > CANVAS_WIDTH + 50) {
+        this.state.fishes.splice(i, 1);
+      } else if (fish.direction === -1 && fish.x < -50) {
         this.state.fishes.splice(i, 1);
       }
     }
@@ -170,22 +175,25 @@ export class GameEngine {
       const name = config.names[Math.floor(Math.random() * config.names.length)];
       const color = config.colors[Math.floor(Math.random() * config.colors.length)];
       
-      // Base Speed * TürÇarpanı (simplified base speed as 1.0 here for calculation)
       const speed = 1.0 * config.speedMultiplier;
-
       const y = SEA_LEVEL_Y + 50 + Math.random() * (CANVAS_HEIGHT - SEA_LEVEL_Y - 100);
+      
+      // Spawn from left or right
+      const direction = Math.random() > 0.5 ? 1 : -1;
+      const x = direction === 1 ? -50 : CANVAS_WIDTH + 50;
 
       this.state.fishes.push({
         id: Math.random(),
         type: fishClass,
         name,
-        x: CANVAS_WIDTH + 50,
+        x,
         y,
         speed,
         value: config.value,
         weight: config.weightMultiplier,
         color,
-        radius: config.radius
+        radius: config.radius,
+        direction
       });
     }
   }
@@ -203,17 +211,18 @@ export class GameEngine {
   private draw() {
     this.ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-    // 1. Draw Sky
+    // 1. Draw Sky (25%)
     const gradient = this.ctx.createLinearGradient(0, 0, 0, SEA_LEVEL_Y);
     gradient.addColorStop(0, '#bae6fd');
     gradient.addColorStop(1, '#f0f9ff');
     this.ctx.fillStyle = gradient;
     this.ctx.fillRect(0, 0, CANVAS_WIDTH, SEA_LEVEL_Y);
 
-    // 2. Draw Sea
+    // 2. Draw Sea (75%)
     this.ctx.fillStyle = '#006994';
     this.ctx.fillRect(0, SEA_LEVEL_Y, CANVAS_WIDTH, CANVAS_HEIGHT - SEA_LEVEL_Y);
     
+    // Water shine
     this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
     this.ctx.lineWidth = 2;
     for(let i=0; i<10; i++) {
@@ -230,13 +239,7 @@ export class GameEngine {
     this.ctx.beginPath();
     this.ctx.arc(CANVAS_WIDTH / 2, SEA_LEVEL_Y - 10, 40, 0, Math.PI, false);
     this.ctx.fill();
-    this.ctx.beginPath();
-    this.ctx.moveTo(CANVAS_WIDTH / 2, SEA_LEVEL_Y - 10);
-    this.ctx.lineTo(CANVAS_WIDTH / 2, SEA_LEVEL_Y - 60);
-    this.ctx.strokeStyle = '#5c2d0c';
-    this.ctx.lineWidth = 4;
-    this.ctx.stroke();
-
+    
     // 4. Draw Fisherman
     this.ctx.fillStyle = '#fca5a5';
     this.ctx.beginPath();
@@ -245,7 +248,7 @@ export class GameEngine {
 
     // 5. Draw Hook Line
     this.ctx.strokeStyle = '#ffffff';
-    this.ctx.lineWidth = 2;
+    this.ctx.lineWidth = 1.5;
     this.ctx.beginPath();
     this.ctx.moveTo(CANVAS_WIDTH / 2, SEA_LEVEL_Y - 30);
     this.ctx.lineTo(this.state.hook.x, this.state.hook.y);
@@ -260,9 +263,9 @@ export class GameEngine {
     // 7. Draw Caught Entity
     if (this.state.hook.caughtEntity) {
       const entity = this.state.hook.caughtEntity;
-      this.drawEntity(entity.x, entity.y, entity.radius, entity.color, entity.type, true);
       entity.x = this.state.hook.x;
       entity.y = this.state.hook.y + 10;
+      this.drawEntity(entity.x, entity.y, entity.radius, entity.color, entity.type, true);
     }
 
     // 8. Draw Swimming Entities
@@ -275,9 +278,7 @@ export class GameEngine {
     this.ctx.fillStyle = color;
     this.ctx.save();
     this.ctx.translate(x, y);
-    if (!isCaught) {
-       this.ctx.scale(1, 1); 
-    } else {
+    if (isCaught) {
        this.ctx.rotate(Math.PI / 2);
     }
 
@@ -291,22 +292,11 @@ export class GameEngine {
         this.ctx.lineTo(-radius/2, radius);
         this.ctx.closePath();
         this.ctx.fill();
-        this.ctx.strokeStyle = '#495057';
-        this.ctx.lineWidth = 1;
-        this.ctx.beginPath();
-        this.ctx.moveTo(-5, -5);
-        this.ctx.lineTo(5, 5);
-        this.ctx.stroke();
     } else if (type === 'legendary') {
-       // Chest/Gold Fish
        this.ctx.fillRect(-radius, -radius/1.5, radius*2, radius*1.5);
        this.ctx.strokeStyle = '#e9ecef';
        this.ctx.lineWidth = 2;
        this.ctx.strokeRect(-radius, -radius/1.5, radius*2, radius*1.5);
-       this.ctx.fillStyle = '#e9ecef';
-       this.ctx.beginPath();
-       this.ctx.arc(0, -5, 3, 0, Math.PI*2);
-       this.ctx.fill();
     } else {
         this.ctx.beginPath();
         this.ctx.ellipse(0, 0, radius * 1.5, radius, 0, 0, Math.PI * 2);
@@ -315,14 +305,6 @@ export class GameEngine {
         this.ctx.moveTo(radius, 0);
         this.ctx.lineTo(radius + 10, -10);
         this.ctx.lineTo(radius + 10, 10);
-        this.ctx.fill();
-        this.ctx.fillStyle = 'white';
-        this.ctx.beginPath();
-        this.ctx.arc(-radius/2, -radius/4, 4, 0, Math.PI * 2);
-        this.ctx.fill();
-        this.ctx.fillStyle = 'black';
-        this.ctx.beginPath();
-        this.ctx.arc(-radius/2, -radius/4, 2, 0, Math.PI * 2);
         this.ctx.fill();
     }
 

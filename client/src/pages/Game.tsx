@@ -33,7 +33,7 @@ export default function Game() {
       timeRemaining: 60,
       isPlaying: true,
       hook: {
-        angle: Math.PI / 2,
+        angle: Math.PI / 2, // Center down
         length: 0,
         state: 'idle',
         direction: 1,

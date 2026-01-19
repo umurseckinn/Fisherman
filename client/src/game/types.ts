@@ -11,13 +11,14 @@ export interface Entity {
   weight: number; // Multiplier
   color: string;
   radius: number;
+  direction: 1 | -1; // 1 = moving right, -1 = moving left
 }
 
 export interface Hook {
   angle: number; // in radians
   length: number;
   state: 'idle' | 'shooting' | 'retracting';
-  direction: 1 | -1; // 1 = right, -1 = left
+  direction: 1 | -1; // 1 = right, -1 = left (oscillation direction)
   x: number;
   y: number;
   caughtEntity: Entity | null;
