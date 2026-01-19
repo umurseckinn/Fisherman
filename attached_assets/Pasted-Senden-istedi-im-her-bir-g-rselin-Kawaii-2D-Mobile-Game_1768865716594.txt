@@ -1,0 +1,57 @@
+Senden istediğim her bir görselin 'Kawaii 2D Mobile Game Art' tarzında, kalın kenar çizgili (thick outlines), yumuşak gölgelendirmeli (soft shaded) ve en önemlisi ARKAPLANI ŞEFFAF (Transparent Background PNG) olmasıdır. Tüm varlıklar yandan görünümlü (side-view) olmalı çünkü ekranda yatay hareket edecekler."
+
+1. ANA KARAKTER VE TEKNE
+"Oyunun ana karakteri olan Kayıkçı ve Teknesini çizmeni istiyorum.
+
+Tarz: Sevimli, 'chibi' oranlarında (koca kafalı, küçük vücutlu).
+
+Karakter: Hasır şapkalı, mavi tulum giymiş, yüzünde mutlu ve kararlı bir gülümseme olan bir balıkçı. Elinde basit bir olta tutuyor.
+
+Tekne: Ahşap, hafif tombul ve yuvarlak hatlı, küçük bir sandat. Suyun üzerinde yüzüyormuş gibi hafif bir su çizgisi efekti olabilir.
+
+Çıktı: Karakter teknenin içinde otururken tek bir bütünleşik görsel olarak, arkaplanı şeffaf."
+
+2. BALIKLAR (Seviye Seviye)
+A. Sıradan Balıklar (Hızlı ama Değersiz): "En sık görülecek, küçük boyutlu balıkları çiz. Hamsi veya İstavrit gibi.
+
+Görünüm: Küçük, gümüş-mavi renkli, basit ama sevimli. Gözleri büyük ve şaşkın baksın. Sürü halinde değil, tekil bir balık görseli.
+
+Tarz: Kawaii 2D, şeffaf arkaplan."
+
+B. Nadir Balıklar (Orta Değerli): "Orta boy, daha renkli ve 'lezzetli' görünen balıklar çiz. Somon veya Çipura gibi.
+
+Görünüm: Biraz daha tombul. Bir tanesi turuncu/pembe (Somon), diğeri yeşilimsi/altın (Çipura) renklerde olabilir. Yüz ifadeleri mutlu olsun.
+
+Tarz: Kawaii 2D, kalın çizgili, şeffaf arkaplan."
+
+C. Epik Balıklar (Hızlı, Ağır ve Değerli): "Büyük boyutlu, yakalaması zor görünen 'Baba' balıkları çiz. Kılıç Balığı veya Ton Balığı gibi.
+
+Görünüm (Kılıç Balığı): Koyu lacivert/mor renkli, uzun burunlu, sert ama yine de sevimli bakan bir balık. Hızlı yüzdüğü belli olsun.
+
+Görünüm (Ton Balığı): Çok büyük, yuvarlak, koyu mavi ve metalik gri renklerde, güçlü bir balık.
+
+Tarz: 2D mobil oyun sanatı, şeffaf arkaplan."
+
+D. Efsanevi Balık (En Değerlisi): "Oyundaki en değerli 'Altın Balık'ı çiz.
+
+Görünüm: Tamamen altından yapılmış gibi parlak sarı/turuncu renkte. Etrafında hafif bir parıltı (glow) veya yıldız efektleri olsun. Çok nadir ve büyülü görünmeli. Gözleri mücevher gibi parlasın.
+
+Tarz: Büyülü Kawaii, şeffaf arkaplan."
+
+3. ENGELLEYİCİ VE ÇÖP NESNELER (Ağır ve Değersiz)
+"Oyuncuyu yavaşlatacak, ağır ve değersiz 'Çöp' nesneleri çiz. Bunlar oyuncuya 'bunu tutmamalıydım' hissi vermeli.
+
+Nesne 1 (Taş): Büyük, gri, şekilsiz bir kaya parçası. Üzerinde biraz yeşil yosun ve belki komik, somurtkan bir yüz ifadesi (isteğe bağlı) olabilir. Çok ağır görünmeli.
+
+Nesne 2 (Eski Bot): Yırtık, kahverengi, su çekmiş eski bir deri çizme. İçinden belki bir balık kılçığı çıkıyor olabilir. İşe yaramaz görünmeli.
+
+Tarz: Karikatürize, ağır hissettiren, şeffaf arkaplan."
+
+4. HEDİYE NESNELER (Deniz Dibindekiler)
+"Deniz dibinde duracak değerli ama balık olmayan nesneleri çiz.
+
+Altın Yığını: Deniz kumunun üzerinde duran küçük bir altın para ve mücevher yığını. Işıl ışıl parlamalılar.
+
+Hazine Sandığı (Kapalı): Yarı kuma gömülü, ahşap ve metal kenarlı, kilitli, gizemli ama sevimli bir sandık.
+
+Tarz: Parlak ve çekici, şeffaf arkaplan."

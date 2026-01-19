@@ -222,17 +222,36 @@ export class GameEngine {
   private draw() {
     this.ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-    // 1. Draw Sky (25%)
-    this.ctx.fillStyle = '#99E5FF';
+    // 1. Draw Sky Gradient
+    const skyGradient = this.ctx.createLinearGradient(0, 0, 0, SEA_LEVEL_Y);
+    skyGradient.addColorStop(0, '#87CEEB');
+    skyGradient.addColorStop(1, '#FFFFFF');
+    this.ctx.fillStyle = skyGradient;
     this.ctx.fillRect(0, 0, CANVAS_WIDTH, SEA_LEVEL_Y);
 
     this.drawSun(CANVAS_WIDTH - 60, 50);
     this.drawCloud(60, 40, 40);
     this.drawCloud(150, 60, 30);
+    this.drawCloud(300, 45, 35);
 
-    // 2. Draw Sea (75%)
-    this.ctx.fillStyle = '#4DB8FF';
-    this.ctx.fillRect(0, SEA_LEVEL_Y, CANVAS_WIDTH, CANVAS_HEIGHT - SEA_LEVEL_Y);
+    // 2. Draw Sea Gradient with Wave
+    const seaGradient = this.ctx.createLinearGradient(0, SEA_LEVEL_Y, 0, CANVAS_HEIGHT);
+    seaGradient.addColorStop(0, '#40E0D0');
+    seaGradient.addColorStop(1, '#1E90FF');
+    this.ctx.fillStyle = seaGradient;
+    
+    // Wave surface effect
+    this.ctx.beginPath();
+    const time = performance.now() * 0.002;
+    this.ctx.moveTo(0, SEA_LEVEL_Y);
+    for (let x = 0; x <= CANVAS_WIDTH; x += 10) {
+      const y = SEA_LEVEL_Y + Math.sin(x * 0.02 + time) * 5;
+      this.ctx.lineTo(x, y);
+    }
+    this.ctx.lineTo(CANVAS_WIDTH, CANVAS_HEIGHT);
+    this.ctx.lineTo(0, CANVAS_HEIGHT);
+    this.ctx.closePath();
+    this.ctx.fill();
     
     // Bottom Sand
     this.ctx.fillStyle = '#FFE1A1';
@@ -241,27 +260,29 @@ export class GameEngine {
     // Draw Arrival Island
     if (this.isArriving) {
       const islandX = CANVAS_WIDTH - (this.arrivalProgress * 150);
-      this.ctx.fillStyle = '#4CAF50';
+      this.ctx.fillStyle = '#98FB98'; // Pastel Green
       this.ctx.beginPath();
       this.ctx.moveTo(islandX, SEA_LEVEL_Y);
-      this.ctx.lineTo(islandX + 200, SEA_LEVEL_Y);
+      this.ctx.quadraticCurveTo(islandX + 100, SEA_LEVEL_Y - 20, islandX + 200, SEA_LEVEL_Y);
       this.ctx.lineTo(islandX + 200, CANVAS_HEIGHT);
       this.ctx.lineTo(islandX - 50, CANVAS_HEIGHT);
       this.ctx.closePath();
       this.ctx.fill();
     }
 
-    // 3. Draw Boat
+    // 3. Draw Boat & Fisherman
     this.ctx.save();
     if (this.isArriving) {
       this.ctx.translate(this.arrivalProgress * 100, 0);
     }
     
+    // Detailed Boat
     this.ctx.fillStyle = '#D4A373';
     this.ctx.strokeStyle = '#5c2d0c';
     this.ctx.lineWidth = 3;
     this.ctx.beginPath();
-    this.ctx.arc(CANVAS_WIDTH / 2, SEA_LEVEL_Y - 5, 50, 0, Math.PI, false);
+    this.ctx.moveTo(CANVAS_WIDTH / 2 - 60, SEA_LEVEL_Y);
+    this.ctx.bezierCurveTo(CANVAS_WIDTH / 2 - 60, SEA_LEVEL_Y + 40, CANVAS_WIDTH / 2 + 60, SEA_LEVEL_Y + 40, CANVAS_WIDTH / 2 + 60, SEA_LEVEL_Y);
     this.ctx.closePath();
     this.ctx.fill();
     this.ctx.stroke();
@@ -271,7 +292,7 @@ export class GameEngine {
 
     // 5. Draw Hook Line
     this.ctx.strokeStyle = '#333333';
-    this.ctx.lineWidth = 2;
+    this.ctx.lineWidth = 1.5;
     this.ctx.beginPath();
     this.ctx.moveTo(CANVAS_WIDTH / 2, SEA_LEVEL_Y - 40);
     this.ctx.lineTo(this.state.hook.x, this.state.hook.y);
@@ -325,21 +346,39 @@ export class GameEngine {
   private drawFisherman() {
     const x = CANVAS_WIDTH / 2;
     const y = SEA_LEVEL_Y - 40;
+    
+    // Head (Chibi style)
     this.ctx.fillStyle = '#FFE0BD';
     this.ctx.beginPath();
-    this.ctx.arc(x, y - 20, 20, 0, Math.PI * 2);
+    this.ctx.arc(x, y - 25, 25, 0, Math.PI * 2);
     this.ctx.fill();
-    this.ctx.fillStyle = '#5D4037';
+    
+    // Kawaii Eyes
+    this.ctx.fillStyle = '#000';
     this.ctx.beginPath();
-    this.ctx.arc(x, y - 30, 22, Math.PI, 0);
+    this.ctx.arc(x - 8, y - 25, 3, 0, Math.PI * 2);
+    this.ctx.arc(x + 8, y - 25, 3, 0, Math.PI * 2);
     this.ctx.fill();
-    this.ctx.fillStyle = '#333';
+    
+    // Eye shines
+    this.ctx.fillStyle = '#FFF';
     this.ctx.beginPath();
-    this.ctx.arc(x - 7, y - 20, 3, 0, Math.PI * 2);
-    this.ctx.arc(x + 7, y - 20, 3, 0, Math.PI * 2);
+    this.ctx.arc(x - 9, y - 26, 1, 0, Math.PI * 2);
+    this.ctx.arc(x + 7, y - 26, 1, 0, Math.PI * 2);
     this.ctx.fill();
+
+    // Hat
+    this.ctx.fillStyle = '#FFB347';
+    this.ctx.beginPath();
+    this.ctx.ellipse(x, y - 45, 28, 10, 0, 0, Math.PI * 2);
+    this.ctx.fill();
+    this.ctx.beginPath();
+    this.ctx.arc(x, y - 45, 15, Math.PI, 0);
+    this.ctx.fill();
+
+    // Body
     this.ctx.fillStyle = '#FFFFFF';
-    this.ctx.fillRect(x - 15, y, 30, 25);
+    this.ctx.fillRect(x - 12, y, 24, 20);
   }
 
   private drawFishingRod() {
@@ -369,26 +408,45 @@ export class GameEngine {
 
   private drawEntity(x: number, y: number, radius: number, color: string, type: FishClass, isCaught: boolean = false) {
     this.ctx.save();
-    this.ctx.translate(x, y);
+    const time = performance.now() * 0.005;
+    const wobble = isCaught ? 0 : Math.sin(time + x * 0.05) * 5;
+    this.ctx.translate(x, y + wobble);
     if (isCaught) this.ctx.rotate(Math.PI / 2);
 
     this.ctx.fillStyle = color;
     this.ctx.strokeStyle = '#FFFFFF';
-    this.ctx.lineWidth = 3;
+    this.ctx.lineWidth = 2.5;
 
     if (type === 'trash') {
         this.ctx.beginPath();
         this.ctx.arc(0, 0, radius, 0, Math.PI * 2);
         this.ctx.fill();
         this.ctx.stroke();
+        // Texture for trash
+        this.ctx.fillStyle = 'rgba(0,0,0,0.1)';
+        this.ctx.beginPath();
+        this.ctx.arc(-radius/3, -radius/3, radius/4, 0, Math.PI * 2);
+        this.ctx.fill();
     } else if (type === 'legendary') {
+       // Treasure Chest
+       this.ctx.fillStyle = '#FFD700';
        this.ctx.fillRect(-radius, -radius/1.5, radius*2, radius*1.5);
        this.ctx.strokeRect(-radius, -radius/1.5, radius*2, radius*1.5);
+       // Lid
+       this.ctx.fillStyle = '#DAA520';
+       this.ctx.fillRect(-radius, -radius/1.5, radius*2, 10);
+       // Shine
+       if (Math.sin(time * 2) > 0.8) {
+         this.drawStar(0, -radius, 5, 10, 4);
+       }
     } else {
+        // Fish Body
         this.ctx.beginPath();
         this.ctx.ellipse(0, 0, radius * 1.5, radius, 0, 0, Math.PI * 2);
         this.ctx.fill();
         this.ctx.stroke();
+        
+        // Tail
         this.ctx.beginPath();
         this.ctx.moveTo(radius * 1.2, 0);
         this.ctx.lineTo(radius * 1.2 + 15, -15);
@@ -396,15 +454,46 @@ export class GameEngine {
         this.ctx.closePath();
         this.ctx.fill();
         this.ctx.stroke();
+        
+        // Kawaii Eye
         this.ctx.fillStyle = 'white';
         this.ctx.beginPath();
-        this.ctx.arc(-radius * 0.7, -radius * 0.2, 7, 0, Math.PI * 2);
+        this.ctx.arc(-radius * 0.7, -radius * 0.2, 6, 0, Math.PI * 2);
         this.ctx.fill();
         this.ctx.fillStyle = 'black';
         this.ctx.beginPath();
-        this.ctx.arc(-radius * 0.7, -radius * 0.2, 4, 0, Math.PI * 2);
+        this.ctx.arc(-radius * 0.7, -radius * 0.2, 3.5, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.fillStyle = 'white';
+        this.ctx.beginPath();
+        this.ctx.arc(-radius * 0.75, -radius * 0.3, 1.5, 0, Math.PI * 2);
         this.ctx.fill();
     }
     this.ctx.restore();
+  }
+
+  private drawStar(cx: number, cy: number, spikes: number, outerRadius: number, innerRadius: number) {
+    let rot = Math.PI / 2 * 3;
+    let x = cx;
+    let y = cy;
+    let step = Math.PI / spikes;
+
+    this.ctx.beginPath();
+    this.ctx.moveTo(cx, cy - outerRadius);
+    for (let i = 0; i < spikes; i++) {
+        x = cx + Math.cos(rot) * outerRadius;
+        y = cy + Math.sin(rot) * outerRadius;
+        this.ctx.lineTo(x, y);
+        rot += step;
+
+        x = cx + Math.cos(rot) * innerRadius;
+        y = cy + Math.sin(rot) * innerRadius;
+        this.ctx.lineTo(x, y);
+        rot += step;
+    }
+    this.ctx.lineTo(cx, cy - outerRadius);
+    this.ctx.closePath();
+    this.ctx.fillStyle = 'white';
+    this.ctx.fill();
   }
 }
