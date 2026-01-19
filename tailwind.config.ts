@@ -83,6 +83,9 @@ export default {
         },
       },
       fontFamily: {
+        display: ["'Architects Daughter'", "cursive"],
+        body: ["'Outfit'", "sans-serif"],
+        mono: ["'Fira Code'", "monospace"],
         sans: ["var(--font-sans)"],
         serif: ["var(--font-serif)"],
         mono: ["var(--font-mono)"],
