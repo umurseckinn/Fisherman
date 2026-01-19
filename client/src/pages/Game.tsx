@@ -208,9 +208,29 @@ export default function Game() {
               </Card>
             </div>
 
-            <Button onClick={handleNextLevel} disabled={!upgrades.hasFuel} className="mt-auto w-full py-6 text-xl font-display font-bold bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300">
-              Set Sail to Next Island!
+            <Button 
+              onClick={handleNextLevel} 
+              disabled={!upgrades.hasFuel && score >= fuelCost} 
+              className="mt-auto w-full py-6 text-xl font-display font-bold bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300"
+            >
+              {upgrades.hasFuel ? "Set Sail to Next Island!" : (score < fuelCost ? "Not Enough Coins for Fuel!" : "Buy Fuel to Continue")}
             </Button>
+
+            {/* Game Over Overlay inside Shop if out of money */}
+            {score < fuelCost && !upgrades.hasFuel && inventory.length === 0 && (
+              <div className="absolute inset-0 bg-red-600/95 z-30 flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-500">
+                <h2 className="text-5xl font-display font-bold text-white mb-4">GAME OVER</h2>
+                <p className="text-white text-lg mb-8 opacity-90">
+                  You don't have enough coins for fuel to reach the next island. You are stranded!
+                </p>
+                <Button 
+                  onClick={() => window.location.reload()} 
+                  className="w-full py-8 text-2xl bg-white text-red-600 hover:bg-slate-100 font-bold shadow-xl"
+                >
+                  TRY AGAIN
+                </Button>
+              </div>
+            )}
           </div>
         )}
 
