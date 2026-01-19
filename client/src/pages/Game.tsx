@@ -38,7 +38,7 @@ export default function Game() {
         state: 'idle',
         direction: 1,
         x: CANVAS_WIDTH / 2,
-        y: 200, // SEA_LEVEL_Y in engine
+        y: 200,
         caughtEntity: null,
       },
       fishes: []
