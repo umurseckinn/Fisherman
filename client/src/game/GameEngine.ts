@@ -251,6 +251,9 @@ export class GameEngine {
     // 4. Draw Fisherman (Chibi boy)
     this.drawFisherman();
 
+    // Draw Fishing Rod (visual indicator of the swing)
+    this.drawFishingRod();
+
     // 5. Draw Hook Line
     this.ctx.strokeStyle = '#333333';
     this.ctx.lineWidth = 2;
@@ -331,6 +334,27 @@ export class GameEngine {
     // Body (White shirt)
     this.ctx.fillStyle = '#FFFFFF';
     this.ctx.fillRect(x - 15, y, 30, 25);
+  }
+
+  private drawFishingRod() {
+    const x = CANVAS_WIDTH / 2;
+    const y = SEA_LEVEL_Y - 40;
+    const rodLength = 40;
+    
+    this.ctx.save();
+    this.ctx.translate(x, y);
+    this.ctx.rotate(this.state.hook.angle - Math.PI / 2); // Rotate based on current hook angle
+    
+    // Draw the rod
+    this.ctx.strokeStyle = '#8B4513';
+    this.ctx.lineWidth = 4;
+    this.ctx.lineCap = 'round';
+    this.ctx.beginPath();
+    this.ctx.moveTo(0, 0);
+    this.ctx.lineTo(0, rodLength);
+    this.ctx.stroke();
+    
+    this.ctx.restore();
   }
 
   private drawHookHead(x: number, y: number) {
