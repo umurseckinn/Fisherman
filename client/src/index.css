@@ -4,42 +4,54 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --font-display: 'Fredoka', sans-serif;
-  --font-body: 'Outfit', sans-serif;
-  --font-mono: 'Fira Code', monospace;
+@layer base {
+  :root {
+    /* Vibrant Kawaii Game Palette */
+    --background: 210 50% 98%;
+    --foreground: 222 47% 11%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    
+    --primary: 199 89% 48%; /* Bright Sky Blue */
+    --primary-foreground: 210 40% 98%;
+    
+    --secondary: 45 93% 47%; /* Gold/Yellow */
+    --secondary-foreground: 222 47% 11%;
+    
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    
+    --accent: 322 81% 60%; /* Kawaii Pink */
+    --accent-foreground: 210 40% 98%;
+    
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
 
-  /* Vibrant Game Palette */
-  --background: 210 50% 98%;
-  --foreground: 222 47% 11%;
-  
-  --primary: 217 91% 60%; /* Bright Blue */
-  --primary-foreground: 210 40% 98%;
-  
-  --secondary: 45 93% 47%; /* Gold/Yellow */
-  --secondary-foreground: 222 47% 11%;
-  
-  --muted: 210 40% 96%;
-  --muted-foreground: 215 16% 47%;
-  
-  --accent: 142 71% 45%; /* Green for success/money */
-  --accent-foreground: 210 40% 98%;
-  
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 210 40% 98%;
-
-  --border: 214 32% 91%;
-  --input: 214 32% 91%;
-  --ring: 217 91% 60%;
-  
-  --sea-color: 200 100% 29%; /* #006994 */
-  --sky-gradient-start: 199 100% 85%;
-  --sky-gradient-end: 199 80% 95%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 199 89% 48%;
+    
+    --radius: 1.5rem; /* Rounder corners for kawaii feel */
+    
+    --font-display: 'Fredoka', sans-serif;
+    --font-body: 'Outfit', sans-serif;
+    
+    --sea-color: 200 100% 29%;
+    --sky-gradient-start: 199 100% 85%;
+    --sky-gradient-end: 199 80% 95%;
+  }
 }
 
 @layer base {
+  * {
+    @apply border-border;
+  }
   body {
-    @apply bg-slate-900 text-foreground antialiased overflow-hidden;
+    @apply bg-slate-900 text-foreground antialiased overflow-hidden font-sans;
     font-family: var(--font-body);
   }
 
@@ -49,12 +61,25 @@
   }
 }
 
+.font-display {
+  font-family: var(--font-display);
+}
+
+/* Kawaii Bubble UI Components */
+.bubble-panel {
+  @apply bg-white/90 backdrop-blur-md border-4 border-white rounded-[2.5rem] shadow-xl;
+}
+
+.bubble-button {
+  @apply rounded-full border-b-4 border-black/10 active:border-b-0 active:translate-y-1 transition-all font-display font-bold;
+}
+
 @layer utilities {
   .text-shadow {
-    text-shadow: 2px 2px 0px rgba(0,0,0,0.2);
+    text-shadow: 2px 2px 0px rgba(0,0,0,0.1);
   }
   .text-shadow-lg {
-    text-shadow: 3px 3px 0px rgba(0,0,0,0.3);
+    text-shadow: 3px 3px 0px rgba(0,0,0,0.15);
   }
 }
 

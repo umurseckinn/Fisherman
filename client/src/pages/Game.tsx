@@ -16,7 +16,7 @@ export default function Game() {
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(60);
   const [currentIsland, setCurrentIsland] = useState(1);
-  const [fuelCost, setFuelCost] = useState(100);
+  const [fuelCost, setFuelCost] = useState(50);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [upgrades, setUpgrades] = useState({
     rodLevel: 1,
@@ -68,6 +68,16 @@ export default function Game() {
       if (state) {
         setTimeLeft(Math.ceil(state.timeRemaining));
         setInventory([...state.inventory]);
+        setScore(state.score); 
+        
+        if (state.upgrades) {
+          setUpgrades(prev => ({
+            ...prev,
+            rodLevel: state.upgrades.rodLevel,
+            boatLevel: state.upgrades.boatLevel,
+            hasFuel: state.upgrades.hasFuel
+          }));
+        }
       }
     }, 200);
 
@@ -75,17 +85,23 @@ export default function Game() {
       engine.stop();
       clearInterval(uiSync);
     };
-  }, [gameState === "playing"]);
+  }, [gameState]);
 
   const handleSellAll = () => {
     const totalValue = inventory.reduce((sum, item) => sum + item.value, 0);
-    setScore(score + totalValue);
+    const newScore = score + totalValue;
+    setScore(newScore);
     setInventory([]);
     if (engineRef.current) {
       // @ts-ignore
       engineRef.current.state.inventory = [];
       // @ts-ignore
-      engineRef.current.state.score += totalValue;
+      engineRef.current.state.score = newScore;
+      // @ts-ignore
+      if (engineRef.current.onScoreUpdate) {
+        // @ts-ignore
+        engineRef.current.onScoreUpdate(newScore);
+      }
     }
   };
 
@@ -105,16 +121,32 @@ export default function Game() {
   const upgradeRod = () => {
     const cost = upgrades.rodLevel * 50;
     if (score >= cost) {
-      setScore(score - cost);
-      setUpgrades(prev => ({ ...prev, rodLevel: prev.rodLevel + 1 }));
+      const newScore = score - cost;
+      const newLevel = upgrades.rodLevel + 1;
+      setScore(newScore);
+      setUpgrades(prev => ({ ...prev, rodLevel: newLevel }));
+      if (engineRef.current) {
+        // @ts-ignore
+        engineRef.current.state.score = newScore;
+        // @ts-ignore
+        engineRef.current.state.upgrades.rodLevel = newLevel;
+      }
     }
   };
 
   const upgradeBoat = () => {
     const cost = upgrades.boatLevel * 100;
     if (score >= cost) {
-      setScore(score - cost);
-      setUpgrades(prev => ({ ...prev, boatLevel: prev.boatLevel + 1 }));
+      const newScore = score - cost;
+      const newLevel = upgrades.boatLevel + 1;
+      setScore(newScore);
+      setUpgrades(prev => ({ ...prev, boatLevel: newLevel }));
+      if (engineRef.current) {
+        // @ts-ignore
+        engineRef.current.state.score = newScore;
+        // @ts-ignore
+        engineRef.current.state.upgrades.boatLevel = newLevel;
+      }
     }
   };
 
@@ -122,7 +154,8 @@ export default function Game() {
     if (!upgrades.hasFuel) return;
     
     setCurrentIsland(prev => prev + 1);
-    setFuelCost(Math.floor(fuelCost * 1.5));
+    // Lower the scaling of fuel cost to make progression more sustainable
+    setFuelCost(prev => Math.floor(prev * 1.1));
     setUpgrades(prev => ({ ...prev, hasFuel: false }));
     setGameState("playing");
   };
@@ -152,7 +185,7 @@ export default function Game() {
         {gameState === "shop" && (
           <div className="absolute inset-0 bg-white/95 z-20 overflow-y-auto p-4 flex flex-col gap-4">
             <div className="text-center">
-              <h2 className="text-3xl font-display font-bold text-blue-600">Island {currentIsland} Reached!</h2>
+              <h2 className="text-3xl font-display font-bold text-blue-600">{currentIsland}. Ada'ya Ulaşıldı!</h2>
               <div className="text-2xl font-bold text-green-600 flex items-center justify-center gap-1">
                 <DollarSign className="w-6 h-6" /> {score}
               </div>
@@ -162,12 +195,12 @@ export default function Game() {
               {/* Inventory */}
               <Card className="bg-slate-50 border-2">
                 <CardHeader className="p-3">
-                  <CardTitle className="text-sm flex items-center gap-1"><Anchor className="w-4 h-4" /> Inventory</CardTitle>
+                  <CardTitle className="text-sm flex items-center gap-1"><Anchor className="w-4 h-4" /> Envanter</CardTitle>
                 </CardHeader>
                 <CardContent className="p-3 flex flex-col gap-2">
                   <div className="max-h-[300px] overflow-y-auto flex flex-col gap-1">
                     {inventory.length === 0 ? (
-                      <span className="text-xs text-slate-400 italic">Empty</span>
+                      <span className="text-xs text-slate-400 italic">Boş</span>
                     ) : (
                       inventory.map((item, idx) => (
                         <div key={idx} className="text-xs flex justify-between p-1 bg-white rounded border">
@@ -177,7 +210,7 @@ export default function Game() {
                       ))
                     )}
                   </div>
-                  <Button onClick={handleSellAll} disabled={inventory.length === 0} className="w-full h-8 text-xs bg-green-500 hover:bg-green-600">Sell All</Button>
+                  <Button onClick={handleSellAll} disabled={inventory.length === 0} className="w-full h-8 text-xs bg-green-500 hover:bg-green-600">Hepsini Sat</Button>
                 </CardContent>
               </Card>
 
@@ -188,19 +221,19 @@ export default function Game() {
                 </CardHeader>
                 <CardContent className="p-3 flex flex-col gap-2">
                   <div className="flex flex-col gap-2">
-                    <Button onClick={buyFuel} disabled={upgrades.hasFuel || score < fuelCost} variant={upgrades.hasFuel ? "outline" : "default"} className="flex flex-col h-auto p-2 gap-1 bg-red-500 hover:bg-red-600">
+                    <Button onClick={buyFuel} disabled={upgrades.hasFuel || score < fuelCost} variant={upgrades.hasFuel ? "outline" : "default"} className="flex flex-col h-auto p-2 gap-1 bg-red-500 hover:bg-red-600 text-white">
                       <Fuel className="w-4 h-4" />
-                      <span className="text-[10px] leading-tight">Buy Fuel (${fuelCost})</span>
-                      {upgrades.hasFuel && <span className="text-[8px] text-green-600 font-bold">READY</span>}
+                      <span className="text-[10px] leading-tight">Yakıt Al (${fuelCost})</span>
+                      {upgrades.hasFuel && <span className="text-[8px] text-white font-bold">HAZIR</span>}
                     </Button>
-                    <Button onClick={upgradeRod} disabled={score < (upgrades.rodLevel * 50)} className="flex flex-col h-auto p-2 gap-1 bg-blue-500 hover:bg-blue-600">
+                    <Button onClick={upgradeRod} disabled={score < (upgrades.rodLevel * 50)} className="flex flex-col h-auto p-2 gap-1 bg-blue-500 hover:bg-blue-600 text-white">
                       <Zap className="w-4 h-4" />
-                      <span className="text-[10px] leading-tight">Better Rod (${upgrades.rodLevel * 50})</span>
+                      <span className="text-[10px] leading-tight">Daha İyi Olta (${upgrades.rodLevel * 50})</span>
                       <span className="text-[8px] opacity-70">Lv.{upgrades.rodLevel}</span>
                     </Button>
-                    <Button onClick={upgradeBoat} disabled={score < (upgrades.boatLevel * 100)} className="flex flex-col h-auto p-2 gap-1 bg-purple-500 hover:bg-purple-600">
+                    <Button onClick={upgradeBoat} disabled={score < (upgrades.boatLevel * 100)} className="flex flex-col h-auto p-2 gap-1 bg-purple-500 hover:bg-purple-600 text-white">
                       <Anchor className="w-4 h-4" />
-                      <span className="text-[10px] leading-tight">Big Boat (${upgrades.boatLevel * 100})</span>
+                      <span className="text-[10px] leading-tight">Büyük Tekne (${upgrades.boatLevel * 100})</span>
                       <span className="text-[8px] opacity-70">Lv.{upgrades.boatLevel}</span>
                     </Button>
                   </div>
@@ -211,23 +244,23 @@ export default function Game() {
             <Button 
               onClick={handleNextLevel} 
               disabled={!upgrades.hasFuel && score >= fuelCost} 
-              className="mt-auto w-full py-6 text-xl font-display font-bold bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300"
+              className={`mt-auto w-full py-6 text-xl font-display font-bold bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 ${upgrades.hasFuel ? 'animate-pulse ring-4 ring-blue-300' : ''}`}
             >
-              {upgrades.hasFuel ? "Set Sail to Next Island!" : (score < fuelCost ? "Not Enough Coins for Fuel!" : "Buy Fuel to Continue")}
+              {upgrades.hasFuel ? "Sonraki Ada için Yelken Aç!" : (score < fuelCost ? "Yakıt için Yetersiz Altın!" : "Devam Etmek için Yakıt Al")}
             </Button>
 
             {/* Game Over Overlay inside Shop if out of money */}
             {score < fuelCost && !upgrades.hasFuel && inventory.length === 0 && (
-              <div className="absolute inset-0 bg-red-600/95 z-30 flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-500">
-                <h2 className="text-5xl font-display font-bold text-white mb-4">GAME OVER</h2>
-                <p className="text-white text-lg mb-8 opacity-90">
-                  You don't have enough coins for fuel to reach the next island. You are stranded!
+              <div className="absolute inset-0 bg-red-600/95 z-30 flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-1000 delay-[2000ms] fill-mode-both">
+                <h2 className="text-5xl font-display font-bold text-white mb-4 uppercase tracking-tighter">Oyun Bitti</h2>
+                <p className="text-white text-lg mb-8 opacity-90 font-medium">
+                  Yakıt alacak paran kalmadı! Adada mahsur kaldın.
                 </p>
                 <Button 
                   onClick={() => window.location.reload()} 
-                  className="w-full py-8 text-2xl bg-white text-red-600 hover:bg-slate-100 font-bold shadow-xl"
+                  className="w-full py-8 text-2xl bg-white text-red-600 hover:bg-slate-100 font-display font-bold shadow-xl rounded-2xl transition-transform active:scale-95"
                 >
-                  TRY AGAIN
+                  TEKRAR DENE
                 </Button>
               </div>
             )}

@@ -66,16 +66,21 @@ export class GameEngine {
       if (this.arrivalProgress >= 1) {
         this.arrivalProgress = 1;
         this.state.isPlaying = false;
-        this.onIslandComplete(this.state.island);
+        // Small delay to let the animation settle
+        setTimeout(() => {
+          this.onIslandComplete(this.state.island);
+        }, 100);
       }
       return;
     }
 
     if (this.state.timeRemaining > 0) {
       this.state.timeRemaining -= deltaTime / 1000;
-    } else {
+    } else if (!this.isArriving) {
       this.isArriving = true;
       this.state.hook.state = 'idle';
+      // Reset arrival progress to ensure a clean animation start
+      this.arrivalProgress = 0;
     }
 
     this.updateHook(deltaTime);
@@ -180,7 +185,7 @@ export class GameEngine {
   }
 
   private spawnFishes(deltaTime: number) {
-    const spawnChance = 0.03 + (this.state.island * 0.005);
+    const spawnChance = 0.06 + (this.state.island * 0.01);
     
     if (Math.random() < spawnChance) {
       const rand = Math.random();
@@ -235,9 +240,10 @@ export class GameEngine {
     this.drawCloud(300, 45, 35);
 
     // 2. Draw Sea Gradient with Wave
+    const hue = (this.state.island - 1) * 40;
     const seaGradient = this.ctx.createLinearGradient(0, SEA_LEVEL_Y, 0, CANVAS_HEIGHT);
-    seaGradient.addColorStop(0, '#40E0D0');
-    seaGradient.addColorStop(1, '#1E90FF');
+    seaGradient.addColorStop(0, `hsl(${180 + hue}, 70%, 60%)`);
+    seaGradient.addColorStop(1, `hsl(${210 + hue}, 100%, 40%)`);
     this.ctx.fillStyle = seaGradient;
     
     // Wave surface effect
@@ -254,13 +260,13 @@ export class GameEngine {
     this.ctx.fill();
     
     // Bottom Sand
-    this.ctx.fillStyle = '#FFE1A1';
+    this.ctx.fillStyle = `hsl(${40 + hue}, 100%, 80%)`;
     this.ctx.fillRect(0, CANVAS_HEIGHT - 60, CANVAS_WIDTH, 60);
 
     // Draw Arrival Island
     if (this.isArriving) {
       const islandX = CANVAS_WIDTH - (this.arrivalProgress * 150);
-      this.ctx.fillStyle = '#98FB98'; // Pastel Green
+      this.ctx.fillStyle = `hsl(${120 + hue}, 80%, 80%)`; 
       this.ctx.beginPath();
       this.ctx.moveTo(islandX, SEA_LEVEL_Y);
       this.ctx.quadraticCurveTo(islandX + 100, SEA_LEVEL_Y - 20, islandX + 200, SEA_LEVEL_Y);
@@ -268,6 +274,26 @@ export class GameEngine {
       this.ctx.lineTo(islandX - 50, CANVAS_HEIGHT);
       this.ctx.closePath();
       this.ctx.fill();
+
+      // Arrival Text
+      this.ctx.fillStyle = 'white';
+      this.ctx.font = 'bold 32px Fredoka';
+      this.ctx.textAlign = 'center';
+      this.ctx.shadowBlur = 10;
+      this.ctx.shadowColor = 'black';
+      this.ctx.fillText('ADA GÖRÜNDÜ!', CANVAS_WIDTH / 2, SEA_LEVEL_Y + 150);
+      this.ctx.shadowBlur = 0;
+    }
+
+    // Island Start Text
+    if (this.state.timeRemaining > 57) {
+      this.ctx.fillStyle = 'white';
+      this.ctx.font = 'bold 48px Fredoka';
+      this.ctx.textAlign = 'center';
+      this.ctx.shadowBlur = 15;
+      this.ctx.shadowColor = 'black';
+      this.ctx.fillText(`${this.state.island}. ADA`, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+      this.ctx.shadowBlur = 0;
     }
 
     // 3. Draw Boat & Fisherman
