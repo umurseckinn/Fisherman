@@ -347,38 +347,82 @@ export class GameEngine {
     const x = CANVAS_WIDTH / 2;
     const y = SEA_LEVEL_Y - 40;
     
-    // Head (Chibi style)
-    this.ctx.fillStyle = '#FFE0BD';
+    // Body/Shirt (Premium Gradient)
+    const shirtGrad = this.ctx.createLinearGradient(x - 15, y, x + 15, y + 25);
+    shirtGrad.addColorStop(0, '#FF6B6B');
+    shirtGrad.addColorStop(1, '#EE5253');
+    this.ctx.fillStyle = shirtGrad;
+    this.ctx.beginPath();
+    this.ctx.roundRect(x - 15, y, 30, 25, 8);
+    this.ctx.fill();
+    this.ctx.strokeStyle = '#8B0000';
+    this.ctx.lineWidth = 1.5;
+    this.ctx.stroke();
+
+    // Head (Chibi style with shading)
+    const headGrad = this.ctx.createRadialGradient(x + 5, y - 30, 5, x, y - 25, 25);
+    headGrad.addColorStop(0, '#FFF5E6');
+    headGrad.addColorStop(1, '#FFE0BD');
+    this.ctx.fillStyle = headGrad;
     this.ctx.beginPath();
     this.ctx.arc(x, y - 25, 25, 0, Math.PI * 2);
     this.ctx.fill();
     
-    // Kawaii Eyes
+    // Blushing cheeks
+    this.ctx.fillStyle = 'rgba(255, 182, 193, 0.6)';
+    this.ctx.beginPath();
+    this.ctx.arc(x - 12, y - 22, 5, 0, Math.PI * 2);
+    this.ctx.arc(x + 12, y - 22, 5, 0, Math.PI * 2);
+    this.ctx.fill();
+
+    // Premium Kawaii Eyes (Bigger, more expressive)
     this.ctx.fillStyle = '#000';
     this.ctx.beginPath();
-    this.ctx.arc(x - 8, y - 25, 3, 0, Math.PI * 2);
-    this.ctx.arc(x + 8, y - 25, 3, 0, Math.PI * 2);
+    this.ctx.arc(x - 8, y - 25, 4.5, 0, Math.PI * 2);
+    this.ctx.arc(x + 8, y - 25, 4.5, 0, Math.PI * 2);
     this.ctx.fill();
     
-    // Eye shines
+    // Multi-layered eye shines
     this.ctx.fillStyle = '#FFF';
     this.ctx.beginPath();
-    this.ctx.arc(x - 9, y - 26, 1, 0, Math.PI * 2);
-    this.ctx.arc(x + 7, y - 26, 1, 0, Math.PI * 2);
-    this.ctx.fill();
-
-    // Hat
-    this.ctx.fillStyle = '#FFB347';
-    this.ctx.beginPath();
-    this.ctx.ellipse(x, y - 45, 28, 10, 0, 0, Math.PI * 2);
+    this.ctx.arc(x - 9.5, y - 27.5, 2.5, 0, Math.PI * 2);
+    this.ctx.arc(x + 6.5, y - 27.5, 2.5, 0, Math.PI * 2);
     this.ctx.fill();
     this.ctx.beginPath();
-    this.ctx.arc(x, y - 45, 15, Math.PI, 0);
+    this.ctx.arc(x - 6.5, y - 23.5, 1.2, 0, Math.PI * 2);
+    this.ctx.arc(x + 9.5, y - 23.5, 1.2, 0, Math.PI * 2);
     this.ctx.fill();
 
-    // Body
-    this.ctx.fillStyle = '#FFFFFF';
-    this.ctx.fillRect(x - 12, y, 24, 20);
+    // Tiny Smile
+    this.ctx.strokeStyle = '#000';
+    this.ctx.lineWidth = 1.5;
+    this.ctx.beginPath();
+    this.ctx.arc(x, y - 18, 5, 0.1 * Math.PI, 0.9 * Math.PI);
+    this.ctx.stroke();
+
+    // Premium Straw Hat with Texture
+    const hatGrad = this.ctx.createLinearGradient(x - 35, y - 55, x + 35, y - 30);
+    hatGrad.addColorStop(0, '#F4D03F');
+    hatGrad.addColorStop(1, '#D4AC0D');
+    this.ctx.fillStyle = hatGrad;
+    this.ctx.beginPath();
+    this.ctx.ellipse(x, y - 42, 35, 12, 0, 0, Math.PI * 2);
+    this.ctx.fill();
+    this.ctx.strokeStyle = '#B7950B';
+    this.ctx.lineWidth = 2;
+    this.ctx.stroke();
+    
+    // Hat Top
+    this.ctx.beginPath();
+    this.ctx.arc(x, y - 45, 18, Math.PI, 0);
+    this.ctx.fill();
+    this.ctx.stroke();
+    
+    // Red Ribbon with shine
+    this.ctx.fillStyle = '#C0392B';
+    this.ctx.fillRect(x - 18, y - 47, 36, 6);
+    this.ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    this.ctx.fillRect(x - 18, y - 47, 36, 2);
   }
 
   private drawFishingRod() {
@@ -388,22 +432,41 @@ export class GameEngine {
     this.ctx.save();
     this.ctx.translate(x, y);
     this.ctx.rotate(this.state.hook.angle - Math.PI / 2);
-    this.ctx.strokeStyle = '#8B4513';
+    
+    // Premium Rod Gradient
+    const rodGrad = this.ctx.createLinearGradient(0, 0, 0, rodLength);
+    rodGrad.addColorStop(0, '#8B4513');
+    rodGrad.addColorStop(1, '#A0522D');
+    this.ctx.strokeStyle = rodGrad;
+    
     this.ctx.lineWidth = 4;
     this.ctx.lineCap = 'round';
     this.ctx.beginPath();
     this.ctx.moveTo(0, 0);
     this.ctx.lineTo(0, rodLength);
     this.ctx.stroke();
+    
+    // Reel detail
+    this.ctx.fillStyle = '#333';
+    this.ctx.beginPath();
+    this.ctx.arc(0, 5, 4, 0, Math.PI * 2);
+    this.ctx.fill();
+    
     this.ctx.restore();
   }
 
   private drawHookHead(x: number, y: number) {
-    this.ctx.strokeStyle = '#555';
-    this.ctx.lineWidth = 3;
+    this.ctx.strokeStyle = '#777';
+    this.ctx.lineWidth = 2;
     this.ctx.beginPath();
     this.ctx.arc(x, y - 5, 8, 0, Math.PI * 0.8);
     this.ctx.stroke();
+    
+    // Bait detail
+    this.ctx.fillStyle = '#FF6347';
+    this.ctx.beginPath();
+    this.ctx.arc(x + 5, y - 2, 3, 0, Math.PI * 2);
+    this.ctx.fill();
   }
 
   private drawEntity(x: number, y: number, radius: number, color: string, type: FishClass, isCaught: boolean = false) {
@@ -413,60 +476,114 @@ export class GameEngine {
     this.ctx.translate(x, y + wobble);
     if (isCaught) this.ctx.rotate(Math.PI / 2);
 
+    // Dynamic Shadow based on depth
+    this.ctx.shadowBlur = 12;
+    this.ctx.shadowColor = 'rgba(0,0,0,0.25)';
+
     this.ctx.fillStyle = color;
     this.ctx.strokeStyle = '#FFFFFF';
     this.ctx.lineWidth = 2.5;
 
     if (type === 'trash') {
+        // More detailed trash (Old Can)
+        const canGrad = this.ctx.createLinearGradient(-radius, -radius, radius, radius);
+        canGrad.addColorStop(0, '#A0A0A0');
+        canGrad.addColorStop(1, '#707070');
+        this.ctx.fillStyle = canGrad;
         this.ctx.beginPath();
-        this.ctx.arc(0, 0, radius, 0, Math.PI * 2);
+        this.ctx.roundRect(-radius, -radius, radius * 1.5, radius * 2, 4);
         this.ctx.fill();
         this.ctx.stroke();
-        // Texture for trash
+        // Dents
         this.ctx.fillStyle = 'rgba(0,0,0,0.1)';
         this.ctx.beginPath();
-        this.ctx.arc(-radius/3, -radius/3, radius/4, 0, Math.PI * 2);
+        this.ctx.arc(-radius/2, -radius/2, radius/3, 0, Math.PI * 2);
         this.ctx.fill();
     } else if (type === 'legendary') {
-       // Treasure Chest
-       this.ctx.fillStyle = '#FFD700';
-       this.ctx.fillRect(-radius, -radius/1.5, radius*2, radius*1.5);
-       this.ctx.strokeRect(-radius, -radius/1.5, radius*2, radius*1.5);
-       // Lid
+       // High-Premium Treasure Chest
+       const gradient = this.ctx.createLinearGradient(-radius, -radius, radius, radius);
+       gradient.addColorStop(0, '#FFD700');
+       gradient.addColorStop(0.5, '#F1C40F');
+       gradient.addColorStop(1, '#B8860B');
+       this.ctx.fillStyle = gradient;
+       
+       this.ctx.beginPath();
+       this.ctx.roundRect(-radius, -radius/1.5, radius*2, radius*1.5, 8);
+       this.ctx.fill();
+       this.ctx.stroke();
+       
+       // Decorative iron bands
+       this.ctx.fillStyle = '#4A3728';
+       this.ctx.fillRect(-radius + 8, -radius/1.5, 12, radius*1.5);
+       this.ctx.fillRect(radius - 20, -radius/1.5, 12, radius*1.5);
+       
+       // Keyhole plate
        this.ctx.fillStyle = '#DAA520';
-       this.ctx.fillRect(-radius, -radius/1.5, radius*2, 10);
-       // Shine
-       if (Math.sin(time * 2) > 0.8) {
-         this.drawStar(0, -radius, 5, 10, 4);
+       this.ctx.beginPath();
+       this.ctx.arc(0, 0, 7, 0, Math.PI * 2);
+       this.ctx.fill();
+       this.ctx.stroke();
+       this.ctx.fillStyle = '#000';
+       this.ctx.fillRect(-1.5, 0, 3, 5);
+
+       // Sparkle effects
+       if (Math.sin(time * 4) > 0.6) {
+         this.drawStar(radius * 0.6, -radius * 0.9, 4, 10, 3);
+         this.drawStar(-radius * 0.7, -radius * 0.4, 4, 6, 2);
        }
     } else {
-        // Fish Body
+        // High-Premium Fish with iridescent shading
+        const fishGrad = this.ctx.createRadialGradient(-radius * 0.6, -radius * 0.6, 0, 0, 0, radius * 2);
+        fishGrad.addColorStop(0, 'rgba(255,255,255,0.5)');
+        fishGrad.addColorStop(0.3, color);
+        fishGrad.addColorStop(1, 'rgba(0,0,0,0.3)');
+        this.ctx.fillStyle = fishGrad;
+
         this.ctx.beginPath();
         this.ctx.ellipse(0, 0, radius * 1.5, radius, 0, 0, Math.PI * 2);
         this.ctx.fill();
         this.ctx.stroke();
         
-        // Tail
+        // Flowing Fins
+        this.ctx.fillStyle = color;
         this.ctx.beginPath();
-        this.ctx.moveTo(radius * 1.2, 0);
-        this.ctx.lineTo(radius * 1.2 + 15, -15);
-        this.ctx.lineTo(radius * 1.2 + 15, 15);
-        this.ctx.closePath();
+        this.ctx.moveTo(0, -radius);
+        this.ctx.bezierCurveTo(radius * 0.5, -radius * 1.8, radius * 1.2, -radius * 1.5, radius, -radius * 0.5);
         this.ctx.fill();
         this.ctx.stroke();
         
-        // Kawaii Eye
+        // Fancy Tail
+        this.ctx.beginPath();
+        this.ctx.moveTo(radius * 1.2, 0);
+        this.ctx.bezierCurveTo(radius * 2.2, -radius * 1.2, radius * 2.2, radius * 1.2, radius * 1.2, 0);
+        this.ctx.fill();
+        this.ctx.stroke();
+        
+        // Multi-layered Kawaii Eye
         this.ctx.fillStyle = 'white';
         this.ctx.beginPath();
-        this.ctx.arc(-radius * 0.7, -radius * 0.2, 6, 0, Math.PI * 2);
+        this.ctx.arc(-radius * 0.75, -radius * 0.2, 7.5, 0, Math.PI * 2);
         this.ctx.fill();
         this.ctx.fillStyle = 'black';
         this.ctx.beginPath();
-        this.ctx.arc(-radius * 0.7, -radius * 0.2, 3.5, 0, Math.PI * 2);
+        this.ctx.arc(-radius * 0.75, -radius * 0.2, 4.5, 0, Math.PI * 2);
         this.ctx.fill();
+        
+        // Three-point eye shine
         this.ctx.fillStyle = 'white';
         this.ctx.beginPath();
-        this.ctx.arc(-radius * 0.75, -radius * 0.3, 1.5, 0, Math.PI * 2);
+        this.ctx.arc(-radius * 0.85, -radius * 0.35, 2.5, 0, Math.PI * 2);
+        this.ctx.arc(-radius * 0.65, -radius * 0.1, 1.2, 0, Math.PI * 2);
+        this.ctx.arc(-radius * 0.75, 0, 0.8, 0, Math.PI * 2);
+        this.ctx.fill();
+
+        // Rosy blush with soft edges
+        const blushGrad = this.ctx.createRadialGradient(-radius * 0.4, 0, 0, -radius * 0.4, 0, 6);
+        blushGrad.addColorStop(0, 'rgba(255, 100, 150, 0.5)');
+        blushGrad.addColorStop(1, 'rgba(255, 100, 150, 0)');
+        this.ctx.fillStyle = blushGrad;
+        this.ctx.beginPath();
+        this.ctx.ellipse(-radius * 0.4, 0, 6, 3, 0, 0, Math.PI * 2);
         this.ctx.fill();
     }
     this.ctx.restore();
