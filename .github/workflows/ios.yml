@@ -1,0 +1,48 @@
+name: Build iOS App
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install Dependencies
+      run: npm install
+
+    - name: Build Web App
+      run: npm run build
+
+    - name: Install Capacitor
+      run: npm install @capacitor/core @capacitor/cli @capacitor/ios
+
+    - name: Initialize Capacitor
+      run: npx cap init "Fishermans Journey" com.fishermans.journey --web-dir dist/public
+
+    - name: Add iOS Platform
+      run: npx cap add ios
+
+    - name: Sync iOS Project
+      run: npx cap sync ios
+
+    - name: Build iOS App
+      run: |
+        cd ios/App
+        xcodebuild -workspace App.xcworkspace -scheme App -configuration Debug -sdk iphonesimulator -derivedDataPath build
+
+    - name: Upload iOS App Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ios-app-debug
+        path: ios/App/build/Build/Products/Debug-iphonesimulator/App.app
