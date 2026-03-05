@@ -25,7 +25,7 @@ jobs:
       run: npm run build
 
     - name: Install Capacitor
-      run: npm install @capacitor/core @capacitor/cli @capacitor/ios
+      run: npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/ios@6
 
     - name: Initialize Capacitor
       run: npx cap init "Fishermans Journey" com.fishermans.journey --web-dir dist/public
