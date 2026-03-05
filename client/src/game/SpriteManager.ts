@@ -67,11 +67,14 @@ export const ASSETS = {
   'fish_env_bubbles': '/assets/environment/bubbles.png',
   'fish_anchor': '/assets/environment/anchor.png',
   'fish_shell': '/assets/environment/shell.png',
-  
+
   // Environment
   'boat': '/assets/environment/boat.svg',
   'fisherman': '/assets/environment/fisherman.svg',
   'hook': '/assets/environment/hook.svg',
   'background_sky': '/assets/environment/sky.svg', // Optional
   'background_sea': '/assets/environment/sea.svg', // Optional
+
+  // Fisherman + Boat sprite (kullanıcı görseli)
+  'fisherman_boat': '/assets/fisherman_and_boat/fisherman1.png',
 };
