@@ -24,7 +24,271 @@ export default function Home() {
           Catch fish, earn cash, and fuel your journey across the endless sea!
         </p>
 
-        {/* Buttons */}
+        <div className="mt-4 w-full">
+          <div className="flex gap-4 overflow-x-auto pb-4 snap-x">
+            
+            {/* Bubble Fish Card */}
+            <div className="flex-shrink-0 w-[120px] bg-[#E8F4FD] rounded-[16px] p-3 pt-4 flex flex-col items-center shadow-sm hover:scale-105 transition-transform duration-150 snap-center">
+              <div className="w-[80px] h-[80px] flex items-center justify-center mb-2 relative">
+                <img 
+                  src="/assets/fish/bubble_fish.png" 
+                  alt="Bubble Fish" 
+                  className="w-[96px] h-[72px] object-contain hover:scale-110 transition-transform duration-300"
+                />
+              </div>
+              <span className="text-sm font-bold text-slate-700">Bubble Fish</span>
+              <span className="text-xs font-bold text-primary bg-white/50 px-2 py-1 rounded-full mt-1">15 🪙</span>
+            </div>
+
+            {/* Sakura Fish Card */}
+            <div className="flex-shrink-0 w-[120px] bg-[#FDF0F5] rounded-[16px] p-3 pt-4 flex flex-col items-center shadow-sm hover:scale-105 transition-transform duration-150 snap-center group">
+              <div className="w-[80px] h-[80px] flex items-center justify-center mb-2 relative">
+                <img 
+                  src="/assets/fish/sakura_fish.png" 
+                  alt="Sakura Fish" 
+                  className="w-[104px] h-[80px] object-contain group-hover:rotate-3 group-hover:scale-110 transition-all duration-300"
+                />
+              </div>
+              <span className="text-sm font-bold text-slate-700">Sakura Fish</span>
+              <span className="text-xs font-bold text-primary bg-white/50 px-2 py-1 rounded-full mt-1">25 🪙</span>
+            </div>
+
+            {/* Zap Fish Card */}
+            <div className="flex-shrink-0 w-[120px] bg-[#FFF6C7] rounded-[16px] p-3 pt-4 flex flex-col items-center shadow-sm hover:scale-105 transition-transform duration-150 snap-center group">
+              <div className="w-[80px] h-[80px] flex items-center justify-center mb-2 relative">
+                <img 
+                  src="/assets/fish/zap_fish.png" 
+                  alt="Zap Fish" 
+                  className="w-[96px] h-[72px] object-contain group-hover:rotate-3 group-hover:scale-110 transition-all duration-300"
+                />
+              </div>
+              <span className="text-sm font-bold text-slate-700">Zap Fish</span>
+              <span className="text-xs font-bold text-primary bg-white/50 px-2 py-1 rounded-full mt-1">40 🪙</span>
+            </div>
+
+            {/* Candy Fish Card */}
+            <div className="flex-shrink-0 w-[120px] bg-[#FFE5EE] rounded-[16px] p-3 pt-4 flex flex-col items-center shadow-sm hover:scale-105 transition-transform duration-150 snap-center group">
+              <div className="w-[80px] h-[80px] flex items-center justify-center mb-2 relative">
+                <img 
+                  src="/assets/fish/candy_fish.png" 
+                  alt="Candy Fish" 
+                  className="w-[96px] h-[72px] object-contain group-hover:rotate-3 group-hover:scale-110 transition-all duration-300"
+                />
+              </div>
+              <span className="text-sm font-bold text-slate-700">Candy Fish</span>
+              <span className="text-xs font-bold text-primary bg-white/50 px-2 py-1 rounded-full mt-1">55 🪙</span>
+            </div>
+
+            {/* Moon Fish Card */}
+            <div className="flex-shrink-0 w-[120px] bg-[#EEF2FF] rounded-[16px] p-3 pt-4 flex flex-col items-center shadow-sm hover:scale-105 transition-transform duration-150 snap-center group">
+              <div className="w-[80px] h-[80px] flex items-center justify-center mb-2 relative">
+                <img 
+                  src="/assets/fish/moon_fish.png" 
+                  alt="Moon Fish" 
+                  className="w-[96px] h-[72px] object-contain group-hover:rotate-3 group-hover:scale-110 transition-all duration-300"
+                />
+              </div>
+              <span className="text-sm font-bold text-slate-700">Moon Fish</span>
+              <span className="text-xs font-bold text-primary bg-white/50 px-2 py-1 rounded-full mt-1">80 🪙</span>
+            </div>
+
+            <div className="flex-shrink-0 w-[120px] bg-[#FFE3D6] rounded-[16px] p-3 pt-4 flex flex-col items-center shadow-sm hover:scale-105 transition-transform duration-150 snap-center group">
+              <div className="w-[80px] h-[80px] flex items-center justify-center mb-2 relative">
+                <img 
+                  src="/assets/fish/lava_fish.png" 
+                  alt="Lava Fish" 
+                  className="w-[96px] h-[72px] object-contain group-hover:rotate-3 group-hover:scale-110 transition-all duration-300"
+                />
+              </div>
+              <span className="text-sm font-bold text-slate-700">Lava Fish</span>
+              <span className="text-xs font-bold text-primary bg-white/50 px-2 py-1 rounded-full mt-1">110 🪙</span>
+            </div>
+
+            <div className="flex-shrink-0 w-[120px] bg-[#EEE8FF] rounded-[16px] p-3 pt-4 flex flex-col items-center shadow-sm hover:scale-105 transition-transform duration-150 snap-center group">
+              <div className="w-[80px] h-[80px] flex items-center justify-center mb-2 relative">
+                <img 
+                  src="/assets/fish/crystal_fish.png" 
+                  alt="Crystal Fish" 
+                  className="w-[96px] h-[72px] object-contain group-hover:rotate-3 group-hover:scale-110 transition-all duration-300"
+                />
+              </div>
+              <span className="text-sm font-bold text-slate-700">Crystal Fish</span>
+              <span className="text-xs font-bold text-primary bg-white/50 px-2 py-1 rounded-full mt-1">300 🪙</span>
+            </div>
+
+            <div className="flex-shrink-0 w-[120px] bg-[#FFE9D6] rounded-[16px] p-3 pt-4 flex flex-col items-center shadow-sm hover:scale-105 transition-transform duration-150 snap-center group">
+              <div className="w-[80px] h-[80px] flex items-center justify-center mb-2 relative">
+                <img 
+                  src="/assets/fish/leaf_fish.png" 
+                  alt="Leaf Fish" 
+                  className="w-[96px] h-[72px] object-contain group-hover:rotate-3 group-hover:scale-110 transition-all duration-300"
+                />
+              </div>
+              <span className="text-sm font-bold text-slate-700">Leaf Fish</span>
+              <span className="text-xs font-bold text-primary bg-white/50 px-2 py-1 rounded-full mt-1">200 🪙</span>
+            </div>
+
+            <div className="flex-shrink-0 w-[120px] bg-[#E6F4FF] rounded-[16px] p-3 pt-4 flex flex-col items-center shadow-sm hover:scale-105 transition-transform duration-150 snap-center group">
+              <div className="w-[80px] h-[80px] flex items-center justify-center mb-2 relative">
+                <img 
+                  src="/assets/fish/tide_fish.png" 
+                  alt="Tide Fish" 
+                  className="w-[96px] h-[72px] object-contain group-hover:rotate-3 group-hover:scale-110 transition-all duration-300"
+                />
+              </div>
+              <span className="text-sm font-bold text-slate-700">Tide Fish</span>
+              <span className="text-xs font-bold text-primary bg-white/50 px-2 py-1 rounded-full mt-1">150 🪙</span>
+            </div>
+
+            <div className="flex-shrink-0 w-[120px] bg-[#EEE8FF] rounded-[16px] p-3 pt-4 flex flex-col items-center shadow-sm hover:scale-105 transition-transform duration-150 snap-center group">
+              <div className="w-[80px] h-[80px] flex items-center justify-center mb-2 relative">
+                <img 
+                  src="/assets/fish/crystal_fish.png" 
+                  alt="Crystal Fish" 
+                  className="w-[96px] h-[72px] object-contain group-hover:rotate-3 group-hover:scale-110 transition-all duration-300"
+                />
+              </div>
+              <span className="text-sm font-bold text-slate-700">Crystal Fish</span>
+              <span className="text-xs font-bold text-primary bg-white/50 px-2 py-1 rounded-full mt-1">300 🪙</span>
+            </div>
+
+            <div className="flex-shrink-0 w-[120px] bg-[#FFE9D6] rounded-[16px] p-3 pt-4 flex flex-col items-center shadow-sm hover:scale-105 transition-transform duration-150 snap-center group">
+              <div className="w-[80px] h-[80px] flex items-center justify-center mb-2 relative">
+                <img 
+                  src="/assets/fish/leaf_fish.png" 
+                  alt="Leaf Fish" 
+                  className="w-[96px] h-[72px] object-contain group-hover:rotate-3 group-hover:scale-110 transition-all duration-300"
+                />
+              </div>
+              <span className="text-sm font-bold text-slate-700">Leaf Fish</span>
+              <span className="text-xs font-bold text-primary bg-white/50 px-2 py-1 rounded-full mt-1">200 🪙</span>
+            </div>
+
+            <div className="flex-shrink-0 w-[120px] bg-[#E6F4FF] rounded-[16px] p-3 pt-4 flex flex-col items-center shadow-sm hover:scale-105 transition-transform duration-150 snap-center group">
+              <div className="w-[80px] h-[80px] flex items-center justify-center mb-2 relative">
+                <img 
+                  src="/assets/fish/tide_fish.png" 
+                  alt="Tide Fish" 
+                  className="w-[96px] h-[72px] object-contain group-hover:rotate-3 group-hover:scale-110 transition-all duration-300"
+                />
+              </div>
+              <span className="text-sm font-bold text-slate-700">Tide Fish</span>
+              <span className="text-xs font-bold text-primary bg-white/50 px-2 py-1 rounded-full mt-1">150 🪙</span>
+            </div>
+
+            {/* Coral Reef Card (Danger) */}
+            <div className="flex-shrink-0 w-[120px] bg-[#FFF3E0] rounded-[16px] p-3 pt-4 flex flex-col items-center shadow-sm border border-[#FF5252] snap-center">
+              <div className="w-[80px] h-[80px] flex items-center justify-center mb-2 relative">
+                <img 
+                  src="/assets/environment/coral.png" 
+                  alt="Coral Reef" 
+                  className="w-[128px] h-[92px] object-contain"
+                />
+              </div>
+              <span className="text-sm font-bold text-slate-700">Coral Reef</span>
+              <span className="text-[10px] font-bold text-[#FF5252] bg-white/50 px-2 py-1 rounded-full mt-1 flex items-center gap-1">
+                Olta kırar! ❌
+              </span>
+            </div>
+
+            {/* Treasure Chest Card */}
+            <div className="flex-shrink-0 w-[120px] bg-[#FFF8E1] rounded-[16px] p-3 pt-4 flex flex-col items-center shadow-sm hover:scale-105 transition-transform duration-150 snap-center group">
+              <div className="w-[80px] h-[80px] flex items-center justify-center mb-2 relative">
+                <img 
+                  src="/assets/environment/treasure_chest.png" 
+                  alt="Treasure Chest" 
+                  className="w-[96px] h-[72px] object-contain group-hover:scale-110 transition-all duration-300"
+                />
+              </div>
+              <span className="text-sm font-bold text-slate-700">Treasure Chest</span>
+              <span className="text-xs font-bold text-primary bg-white/50 px-2 py-1 rounded-full mt-1">500 🪙</span>
+            </div>
+
+            {/* Whirlpool Card */}
+            <div className="flex-shrink-0 w-[120px] bg-[#E1F5FE] rounded-[16px] p-3 pt-4 flex flex-col items-center shadow-sm border border-[#FF5252] snap-center">
+              <div className="w-[80px] h-[80px] flex items-center justify-center mb-2 relative">
+                <img 
+                  src="/assets/environment/whirlpool.png" 
+                  alt="Whirlpool" 
+                  className="w-[96px] h-[72px] object-contain" 
+                />
+              </div>
+              <span className="text-sm font-bold text-slate-700">Whirlpool</span>
+              <span className="text-[10px] font-bold text-[#FF5252] bg-white/50 px-2 py-1 rounded-full mt-1 flex items-center gap-1">
+                Danger! ❌
+              </span>
+            </div>
+
+            {/* Sunken Boat Card */}
+            <div className="flex-shrink-0 w-[120px] bg-[#EFEBE9] rounded-[16px] p-3 pt-4 flex flex-col items-center shadow-sm border border-[#FF5252] snap-center">
+              <div className="w-[80px] h-[80px] flex items-center justify-center mb-2 relative">
+                <img 
+                  src="/assets/environment/sunken_boat.png" 
+                  alt="Sunken Boat" 
+                  className="w-[96px] h-[72px] object-contain"
+                />
+              </div>
+              <span className="text-sm font-bold text-slate-700">Sunken Boat</span>
+              <span className="text-[10px] font-bold text-[#FF5252] bg-white/50 px-2 py-1 rounded-full mt-1 flex items-center gap-1">
+                Obstacle ❌
+              </span>
+            </div>
+
+             {/* Shark Skeleton Card */}
+            <div className="flex-shrink-0 w-[120px] bg-[#FAFAFA] rounded-[16px] p-3 pt-4 flex flex-col items-center shadow-sm hover:scale-105 transition-transform duration-150 snap-center group">
+              <div className="w-[80px] h-[80px] flex items-center justify-center mb-2 relative">
+                <img 
+                  src="/assets/environment/shark_skeleton.png" 
+                  alt="Shark Skeleton" 
+                  className="w-[96px] h-[72px] object-contain group-hover:scale-110 transition-all duration-300"
+                />
+              </div>
+              <span className="text-sm font-bold text-slate-700">Shark Skeleton</span>
+              <span className="text-xs font-bold text-primary bg-white/50 px-2 py-1 rounded-full mt-1">0 🪙</span>
+            </div>
+
+             {/* Bubbles Card */}
+            <div className="flex-shrink-0 w-[120px] bg-[#E0F7FA] rounded-[16px] p-3 pt-4 flex flex-col items-center shadow-sm hover:scale-105 transition-transform duration-150 snap-center group">
+              <div className="w-[80px] h-[80px] flex items-center justify-center mb-2 relative">
+                <img 
+                  src="/assets/environment/bubbles.png" 
+                  alt="Bubbles" 
+                  className="w-[96px] h-[72px] object-contain group-hover:scale-110 transition-all duration-300"
+                />
+              </div>
+              <span className="text-sm font-bold text-slate-700">Bubbles</span>
+              <span className="text-xs font-bold text-primary bg-white/50 px-2 py-1 rounded-full mt-1">10 🪙</span>
+            </div>
+
+             {/* Anchor Card */}
+            <div className="flex-shrink-0 w-[120px] bg-[#ECEFF1] rounded-[16px] p-3 pt-4 flex flex-col items-center shadow-sm hover:scale-105 transition-transform duration-150 snap-center group">
+              <div className="w-[80px] h-[80px] flex items-center justify-center mb-2 relative">
+                <img 
+                  src="/assets/environment/anchor.png" 
+                  alt="Anchor" 
+                  className="w-[96px] h-[72px] object-contain group-hover:scale-110 transition-all duration-300"
+                />
+              </div>
+              <span className="text-sm font-bold text-slate-700">Rusty Anchor</span>
+              <span className="text-xs font-bold text-primary bg-white/50 px-2 py-1 rounded-full mt-1">150 🪙</span>
+            </div>
+
+             {/* Shell Card */}
+            <div className="flex-shrink-0 w-[120px] bg-[#FFF3E0] rounded-[16px] p-3 pt-4 flex flex-col items-center shadow-sm hover:scale-105 transition-transform duration-150 snap-center group">
+              <div className="w-[80px] h-[80px] flex items-center justify-center mb-2 relative">
+                <img 
+                  src="/assets/environment/shell.png" 
+                  alt="Shell" 
+                  className="w-[96px] h-[72px] object-contain group-hover:scale-110 transition-all duration-300"
+                />
+              </div>
+              <span className="text-sm font-bold text-slate-700">Sea Shell</span>
+              <span className="text-xs font-bold text-primary bg-white/50 px-2 py-1 rounded-full mt-1">25 🪙</span>
+            </div>
+
+          </div>
+        </div>
+
         <div className="w-full space-y-4">
           <Link href="/game">
             <button className="w-full group relative overflow-hidden bg-primary text-white p-4 rounded-2xl font-bold text-xl shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.02] active:scale-[0.98]">
