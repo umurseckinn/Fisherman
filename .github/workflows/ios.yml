@@ -39,10 +39,16 @@ jobs:
     - name: Build iOS App
       run: |
         cd ios/App
-        xcodebuild -workspace App.xcworkspace -scheme App -configuration Debug -sdk iphonesimulator -derivedDataPath build
+        xcodebuild -workspace App.xcworkspace -scheme App -configuration Debug -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO
 
-    - name: Upload iOS App Artifact
+    - name: Package IPA
+      run: |
+        mkdir -p Payload
+        mv ios/App/build/Build/Products/Debug-iphoneos/App.app Payload/
+        zip -r FishermansJourney.ipa Payload
+
+    - name: Upload iOS IPA Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ios-app-debug
-        path: ios/App/build/Build/Products/Debug-iphonesimulator/App.app
+        name: ios-app-sideload
+        path: FishermansJourney.ipa
