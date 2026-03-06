@@ -1,4 +1,4 @@
-import { type GameState, type Entity, type FishClass, OBJECT_MATRIX } from "./types";
+import { type GameState, type Entity, type FishClass, type CurseType, OBJECT_MATRIX } from "./types";
 import { SpriteManager, ASSETS } from "./SpriteManager";
 import { GameEffects } from "./GameEffects";
 
@@ -10,48 +10,155 @@ export const LEVEL_CONFIG: Record<number, {
   duration: number;
   region: number;
   fuelCost: number;
+  storageCapacity?: number;
   seaColor: string;
   skyColor: string;
   weatherWeights: Record<string, number>;
   fish: FishClass[];
   obstacles: { sea_kelp: number; sea_rock: number; coral: number; anchor: number };
   dynamic: FishClass[];
+  curse?: CurseType;  // Aktif lanet (undefined = 'none')
 }> = {
-  // REGION 1: Başlangıç Körfezi
-  1: { duration: 40, region: 1, fuelCost: 0, seaColor: '#29B6F6', skyColor: '#87CEEB', weatherWeights: { sunny: 1 }, fish: ['bubble', 'sakura', 'zap'], obstacles: { sea_kelp: 1, sea_rock: 0, coral: 0, anchor: 0 }, dynamic: [] },
-  2: { duration: 40, region: 1, fuelCost: 150, seaColor: '#29B6F6', skyColor: '#87CEEB', weatherWeights: { sunny: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy'], obstacles: { sea_kelp: 1, sea_rock: 1, coral: 0, anchor: 0 }, dynamic: [] },
-  3: { duration: 42, region: 1, fuelCost: 0, seaColor: '#29B6F6', skyColor: '#87CEEB', weatherWeights: { sunny: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon'], obstacles: { sea_kelp: 2, sea_rock: 1, coral: 0, anchor: 0 }, dynamic: ['shell'] },
-  4: { duration: 42, region: 1, fuelCost: 150, seaColor: '#29B6F6', skyColor: '#87CEEB', weatherWeights: { sunny: 0.8, cloudy: 0.2 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon'], obstacles: { sea_kelp: 2, sea_rock: 1, coral: 0, anchor: 0 }, dynamic: ['anchor', 'shell'] },
+  // ═══════════════════════════════════════════════
+  // REGION 1: Starter Bay (L1–L20)
+  // ═══════════════════════════════════════════════
+  1: { duration: 50, region: 1, fuelCost: 25, storageCapacity: 10, seaColor: '#29B6F6', skyColor: '#87CEEB', weatherWeights: { sunny: 1 }, fish: ['bubble', 'sakura'], obstacles: { sea_kelp: 0, sea_rock: 0, coral: 0, anchor: 0 }, dynamic: ['shell'] },
+  2: { duration: 50, region: 1, fuelCost: 28, storageCapacity: 10, seaColor: '#29B6F6', skyColor: '#87CEEB', weatherWeights: { sunny: 1 }, fish: ['bubble', 'sakura', 'zap'], obstacles: { sea_kelp: 0, sea_rock: 0, coral: 0, anchor: 0 }, dynamic: ['shell'] },
+  3: { duration: 50, region: 1, fuelCost: 32, storageCapacity: 10, seaColor: '#29B6F6', skyColor: '#87CEEB', weatherWeights: { sunny: 1 }, fish: ['bubble', 'sakura', 'zap'], obstacles: { sea_kelp: 1, sea_rock: 0, coral: 0, anchor: 0 }, dynamic: ['shell'] },
+  4: { duration: 49, region: 1, fuelCost: 36, storageCapacity: 10, seaColor: '#29B6F6', skyColor: '#87CEEB', weatherWeights: { sunny: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy'], obstacles: { sea_kelp: 1, sea_rock: 1, coral: 0, anchor: 0 }, dynamic: ['shell'] },
+  5: { duration: 49, region: 1, fuelCost: 42, storageCapacity: 10, seaColor: '#29B6F6', skyColor: '#87CEEB', weatherWeights: { sunny: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy'], obstacles: { sea_kelp: 1, sea_rock: 1, coral: 0, anchor: 0 }, dynamic: ['shell', 'treasure_chest'] },
+  6: { duration: 47, region: 1, fuelCost: 48, storageCapacity: 10, seaColor: '#29B6F6', skyColor: '#87CEEB', weatherWeights: { sunny: 0.6, cloudy: 0.4 }, fish: ['bubble', 'sakura', 'zap', 'candy'], obstacles: { sea_kelp: 2, sea_rock: 1, coral: 0, anchor: 0 }, dynamic: ['shell'] },
+  7: { duration: 52, region: 1, fuelCost: 44, storageCapacity: 10, seaColor: '#29B6F6', skyColor: '#87CEEB', weatherWeights: { sunny: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy'], obstacles: { sea_kelp: 1, sea_rock: 0, coral: 0, anchor: 0 }, dynamic: ['shell', 'treasure_chest'] },
+  8: { duration: 48, region: 1, fuelCost: 55, storageCapacity: 10, seaColor: '#29B6F6', skyColor: '#81D4FA', weatherWeights: { sunny: 0.5, cloudy: 0.5 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon'], obstacles: { sea_kelp: 2, sea_rock: 1, coral: 0, anchor: 0 }, dynamic: ['shell', 'treasure_chest'] },
+  9: { duration: 46, region: 1, fuelCost: 62, storageCapacity: 10, seaColor: '#29B6F6', skyColor: '#81D4FA', weatherWeights: { sunny: 0.5, cloudy: 0.5 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon'], obstacles: { sea_kelp: 2, sea_rock: 2, coral: 0, anchor: 0 }, dynamic: ['shell'] },
+  10: { duration: 52, region: 1, fuelCost: 58, storageCapacity: 10, seaColor: '#29B6F6', skyColor: '#87CEEB', weatherWeights: { sunny: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon'], obstacles: { sea_kelp: 2, sea_rock: 1, coral: 0, anchor: 0 }, dynamic: ['shell', 'treasure_chest'] }, // BOSS — golden x1.5
+  11: { duration: 48, region: 1, fuelCost: 68, storageCapacity: 10, seaColor: '#26C6DA', skyColor: '#81D4FA', weatherWeights: { sunny: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava'], obstacles: { sea_kelp: 2, sea_rock: 1, coral: 0, anchor: 1 }, dynamic: ['shell', 'sunken_boat'] },
+  12: { duration: 47, region: 1, fuelCost: 72, storageCapacity: 10, seaColor: '#26C6DA', skyColor: '#81D4FA', weatherWeights: { sunny: 0.6, cloudy: 0.4 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava'], obstacles: { sea_kelp: 2, sea_rock: 1, coral: 0, anchor: 1 }, dynamic: ['shell', 'sunken_boat'] },
+  13: { duration: 53, region: 1, fuelCost: 62, storageCapacity: 10, seaColor: '#26C6DA', skyColor: '#81D4FA', weatherWeights: { sunny: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava'], obstacles: { sea_kelp: 1, sea_rock: 1, coral: 0, anchor: 0 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat'] },
+  14: { duration: 46, region: 1, fuelCost: 78, storageCapacity: 10, seaColor: '#26C6DA', skyColor: '#B0BEC5', weatherWeights: { rainy: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide'], obstacles: { sea_kelp: 2, sea_rock: 2, coral: 0, anchor: 1 }, dynamic: ['shell'] },
+  15: { duration: 46, region: 1, fuelCost: 82, storageCapacity: 10, seaColor: '#26C6DA', skyColor: '#81D4FA', weatherWeights: { sunny: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide'], obstacles: { sea_kelp: 2, sea_rock: 1, coral: 2, anchor: 1 }, dynamic: ['shell'] },
+  16: { duration: 48, region: 1, fuelCost: 86, storageCapacity: 10, seaColor: '#26C6DA', skyColor: '#78909C', weatherWeights: { sunny: 0.4, cloudy: 0.6 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf'], obstacles: { sea_kelp: 3, sea_rock: 1, coral: 1, anchor: 0 }, dynamic: ['shell', 'treasure_chest'] },
+  17: { duration: 47, region: 1, fuelCost: 90, storageCapacity: 10, seaColor: '#26C6DA', skyColor: '#78909C', weatherWeights: { sunny: 0.4, cloudy: 0.6 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf'], obstacles: { sea_kelp: 3, sea_rock: 2, coral: 1, anchor: 0 }, dynamic: ['shell', 'sunken_boat', 'shark_skeleton'] },
+  18: { duration: 47, region: 1, fuelCost: 94, storageCapacity: 10, seaColor: '#26C6DA', skyColor: '#78909C', weatherWeights: { rainy: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf'], obstacles: { sea_kelp: 3, sea_rock: 2, coral: 1, anchor: 0 }, dynamic: ['shell', 'treasure_chest', 'whirlpool', 'shark_skeleton'] },
+  19: { duration: 45, region: 1, fuelCost: 98, storageCapacity: 10, seaColor: '#26C6DA', skyColor: '#546E7A', weatherWeights: { stormy: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf'], obstacles: { sea_kelp: 3, sea_rock: 2, coral: 2, anchor: 1 }, dynamic: ['shell', 'treasure_chest', 'whirlpool', 'shark_skeleton'] },
+  20: { duration: 58, region: 1, fuelCost: 120, storageCapacity: 10, seaColor: '#26C6DA', skyColor: '#546E7A', weatherWeights: { stormy: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal'], obstacles: { sea_kelp: 4, sea_rock: 2, coral: 2, anchor: 2 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat', 'whirlpool', 'shark_skeleton'] }, // BOSS
 
-  // REGION 2: Mercan Adaları
-  5: { duration: 44, region: 2, fuelCost: 0, seaColor: '#0288D1', skyColor: '#FFF9C4', weatherWeights: { sunny: 0.75, cloudy: 0.25 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide'], obstacles: { sea_kelp: 2, sea_rock: 1, coral: 1, anchor: 0 }, dynamic: ['shell'] },
-  6: { duration: 44, region: 2, fuelCost: 0, seaColor: '#0288D1', skyColor: '#FFF9C4', weatherWeights: { sunny: 0.70, cloudy: 0.30 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide'], obstacles: { sea_kelp: 2, sea_rock: 2, coral: 1, anchor: 1 }, dynamic: ['sunken_boat', 'shell'] },
-  7: { duration: 46, region: 2, fuelCost: 0, seaColor: '#0288D1', skyColor: '#FFF9C4', weatherWeights: { sunny: 0.65, cloudy: 0.35 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf'], obstacles: { sea_kelp: 3, sea_rock: 2, coral: 1, anchor: 1 }, dynamic: ['whirlpool', 'treasure_chest', 'shell'] },
-  8: { duration: 46, region: 2, fuelCost: 280, seaColor: '#0288D1', skyColor: '#FFF9C4', weatherWeights: { sunny: 0.60, cloudy: 0.40 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf'], obstacles: { sea_kelp: 3, sea_rock: 2, coral: 1, anchor: 1 }, dynamic: ['whirlpool', 'treasure_chest', 'shell'] },
+  // ═══════════════════════════════════════════════
+  // REGION 2: Coral Islands (L21–L40)
+  // ═══════════════════════════════════════════════
+  21: { duration: 48, region: 2, fuelCost: 160, storageCapacity: 10, seaColor: '#0288D1', skyColor: '#FFF9C4', weatherWeights: { sunny: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal'], obstacles: { sea_kelp: 3, sea_rock: 2, coral: 1, anchor: 0 }, dynamic: ['shell', 'treasure_chest'] },
+  22: { duration: 47, region: 2, fuelCost: 163, storageCapacity: 10, seaColor: '#0288D1', skyColor: '#FFF9C4', weatherWeights: { sunny: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal'], obstacles: { sea_kelp: 3, sea_rock: 2, coral: 2, anchor: 0 }, dynamic: ['shell', 'sunken_boat'] },
+  23: { duration: 43, region: 2, fuelCost: 166, storageCapacity: 10, seaColor: '#0288D1', skyColor: '#B0BEC5', weatherWeights: { rainy: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal'], obstacles: { sea_kelp: 2, sea_rock: 2, coral: 1, anchor: 0 }, dynamic: ['shell', 'treasure_chest'] },
+  24: { duration: 54, region: 2, fuelCost: 152, storageCapacity: 10, seaColor: '#0288D1', skyColor: '#FFF9C4', weatherWeights: { sunny: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal'], obstacles: { sea_kelp: 2, sea_rock: 1, coral: 0, anchor: 0 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat'] }, // Nefes
+  25: { duration: 48, region: 2, fuelCost: 170, storageCapacity: 10, seaColor: '#0288D1', skyColor: '#CFD8DC', weatherWeights: { sunny: 0.4, cloudy: 0.6 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy'], obstacles: { sea_kelp: 3, sea_rock: 2, coral: 2, anchor: 1 }, dynamic: ['shell', 'treasure_chest', 'shark_skeleton'] },
+  26: { duration: 47, region: 2, fuelCost: 173, storageCapacity: 10, seaColor: '#0288D1', skyColor: '#CFD8DC', weatherWeights: { sunny: 0.4, cloudy: 0.6 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy'], obstacles: { sea_kelp: 3, sea_rock: 2, coral: 2, anchor: 0 }, dynamic: ['shell', 'sunken_boat', 'shark_skeleton'] },
+  27: { duration: 47, region: 2, fuelCost: 176, storageCapacity: 10, seaColor: '#0288D1', skyColor: '#B0BEC5', weatherWeights: { rainy: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy'], obstacles: { sea_kelp: 3, sea_rock: 2, coral: 1, anchor: 0 }, dynamic: ['shell', 'treasure_chest', 'whirlpool'] },
+  28: { duration: 46, region: 2, fuelCost: 179, storageCapacity: 10, seaColor: '#0288D1', skyColor: '#FFF9C4', weatherWeights: { sunny: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy'], obstacles: { sea_kelp: 3, sea_rock: 2, coral: 3, anchor: 1 }, dynamic: ['shell', 'sunken_boat'] },
+  29: { duration: 54, region: 2, fuelCost: 160, storageCapacity: 10, seaColor: '#0288D1', skyColor: '#FFF9C4', weatherWeights: { sunny: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy'], obstacles: { sea_kelp: 2, sea_rock: 1, coral: 1, anchor: 0 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat'] }, // Nefes
+  30: { duration: 58, region: 2, fuelCost: 200, storageCapacity: 10, seaColor: '#0277BD', skyColor: '#546E7A', weatherWeights: { stormy: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom'], obstacles: { sea_kelp: 4, sea_rock: 2, coral: 3, anchor: 2 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat', 'whirlpool', 'shark_skeleton'] }, // BOSS
 
-  // REGION 3: Derin Mavi
-  9: { duration: 48, region: 3, fuelCost: 0, seaColor: '#01579B', skyColor: '#FF7043', weatherWeights: { sunny: 0.50, cloudy: 0.30, rainy: 0.20 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal'], obstacles: { sea_kelp: 3, sea_rock: 2, coral: 2, anchor: 1 }, dynamic: ['shark_skeleton', 'whirlpool', 'shell'] },
-  10: { duration: 48, region: 3, fuelCost: 0, seaColor: '#01579B', skyColor: '#FF7043', weatherWeights: { sunny: 0.45, cloudy: 0.35, rainy: 0.20 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy'], obstacles: { sea_kelp: 4, sea_rock: 2, coral: 2, anchor: 1 }, dynamic: ['shark_skeleton', 'whirlpool', 'sunken_boat', 'shell'] },
-  11: { duration: 50, region: 3, fuelCost: 0, seaColor: '#01579B', skyColor: '#FF7043', weatherWeights: { sunny: 0.40, cloudy: 0.35, rainy: 0.25 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom'], obstacles: { sea_kelp: 4, sea_rock: 3, coral: 2, anchor: 2 }, dynamic: ['shark_skeleton', 'whirlpool', 'treasure_chest'] },
-  12: { duration: 50, region: 3, fuelCost: 450, seaColor: '#01579B', skyColor: '#FF7043', weatherWeights: { sunny: 0.40, cloudy: 0.30, rainy: 0.30 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom'], obstacles: { sea_kelp: 4, sea_rock: 3, coral: 2, anchor: 2 }, dynamic: ['shark_skeleton', 'whirlpool'] },
+  // ═══════════════════════════════════════════════
+  // REGION 3: Deep Blue (L31–L50)
+  // ═══════════════════════════════════════════════
+  31: { duration: 48, region: 3, fuelCost: 210, storageCapacity: 10, seaColor: '#01579B', skyColor: '#546E7A', weatherWeights: { sunny: 0.3, cloudy: 0.7 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom'], obstacles: { sea_kelp: 3, sea_rock: 2, coral: 2, anchor: 0 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat', 'whirlpool', 'shark_skeleton'] },
+  32: { duration: 47, region: 3, fuelCost: 214, storageCapacity: 10, seaColor: '#01579B', skyColor: '#546E7A', weatherWeights: { sunny: 0.3, cloudy: 0.7 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom'], obstacles: { sea_kelp: 3, sea_rock: 2, coral: 2, anchor: 1 }, dynamic: ['shell', 'treasure_chest'] },
+  33: { duration: 44, region: 3, fuelCost: 217, storageCapacity: 10, seaColor: '#01579B', skyColor: '#37474F', weatherWeights: { rainy: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom'], obstacles: { sea_kelp: 4, sea_rock: 2, coral: 2, anchor: 0 }, dynamic: ['shell', 'sunken_boat', 'whirlpool', 'shark_skeleton'] },
+  34: { duration: 54, region: 3, fuelCost: 198, storageCapacity: 10, seaColor: '#01579B', skyColor: '#78909C', weatherWeights: { sunny: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom'], obstacles: { sea_kelp: 2, sea_rock: 1, coral: 1, anchor: 0 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat'] }, // Nefes
+  35: { duration: 48, region: 3, fuelCost: 220, storageCapacity: 10, seaColor: '#01579B', skyColor: '#546E7A', weatherWeights: { sunny: 0.3, cloudy: 0.7 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 4, sea_rock: 2, coral: 2, anchor: 1 }, dynamic: ['shell', 'treasure_chest', 'whirlpool', 'shark_skeleton'] },
+  36: { duration: 46, region: 3, fuelCost: 223, storageCapacity: 10, seaColor: '#01579B', skyColor: '#37474F', weatherWeights: { stormy: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 4, sea_rock: 3, coral: 2, anchor: 2 }, dynamic: ['shell', 'sunken_boat', 'whirlpool', 'shark_skeleton'] },
+  37: { duration: 47, region: 3, fuelCost: 226, storageCapacity: 10, seaColor: '#01579B', skyColor: '#546E7A', weatherWeights: { sunny: 0.3, cloudy: 0.7 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 3, sea_rock: 2, coral: 2, anchor: 0 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat', 'whirlpool', 'shark_skeleton'] },
+  38: { duration: 46, region: 3, fuelCost: 229, storageCapacity: 10, seaColor: '#01579B', skyColor: '#37474F', weatherWeights: { rainy: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 4, sea_rock: 2, coral: 3, anchor: 1 }, dynamic: ['shell', 'treasure_chest', 'whirlpool', 'shark_skeleton'] },
+  39: { duration: 44, region: 3, fuelCost: 232, storageCapacity: 10, seaColor: '#01579B', skyColor: '#263238', weatherWeights: { stormy: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 4, sea_rock: 3, coral: 3, anchor: 2 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat', 'whirlpool', 'shark_skeleton'] },
+  40: { duration: 60, region: 3, fuelCost: 260, storageCapacity: 10, seaColor: '#0D47A1', skyColor: '#1A237E', weatherWeights: { stormy: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 5, sea_rock: 3, coral: 3, anchor: 2 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat', 'whirlpool', 'shark_skeleton'] }, // BOSS
 
-  // REGION 4: Fırtına Geçidi
-  13: { duration: 52, region: 4, fuelCost: 0, seaColor: '#0D2137', skyColor: '#4A148C', weatherWeights: { cloudy: 0.25, stormy: 0.75 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 5, sea_rock: 3, coral: 2, anchor: 2 }, dynamic: ['shark_skeleton', 'whirlpool', 'shell'] },
-  14: { duration: 52, region: 4, fuelCost: 0, seaColor: '#0D2137', skyColor: '#4A148C', weatherWeights: { cloudy: 0.20, stormy: 0.80 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 5, sea_rock: 3, coral: 3, anchor: 2 }, dynamic: ['shark_skeleton', 'whirlpool'] },
-  15: { duration: 54, region: 4, fuelCost: 0, seaColor: '#0D2137', skyColor: '#4A148C', weatherWeights: { stormy: 0.85, cloudy: 0.15 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 5, sea_rock: 4, coral: 3, anchor: 2 }, dynamic: ['shark_skeleton', 'whirlpool'] },
-  16: { duration: 54, region: 4, fuelCost: 700, seaColor: '#0D2137', skyColor: '#4A148C', weatherWeights: { stormy: 0.90, cloudy: 0.10 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 6, sea_rock: 4, coral: 3, anchor: 2 }, dynamic: ['shark_skeleton', 'whirlpool'] },
+  // ═══════════════════════════════════════════════
+  // REGION 4: Storm Pass (L41–L50)
+  // ═══════════════════════════════════════════════
+  41: { duration: 48, region: 4, fuelCost: 270, storageCapacity: 10, seaColor: '#0D2137', skyColor: '#1A237E', weatherWeights: { stormy: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 4, sea_rock: 3, coral: 2, anchor: 2 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat', 'whirlpool', 'shark_skeleton'] },
+  42: { duration: 47, region: 4, fuelCost: 273, storageCapacity: 10, seaColor: '#0D2137', skyColor: '#1A237E', weatherWeights: { stormy: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 4, sea_rock: 3, coral: 2, anchor: 2 }, dynamic: ['shell', 'sunken_boat', 'whirlpool', 'shark_skeleton'] },
+  43: { duration: 46, region: 4, fuelCost: 276, storageCapacity: 10, seaColor: '#0D2137', skyColor: '#1A237E', weatherWeights: { stormy: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 4, sea_rock: 3, coral: 3, anchor: 1 }, dynamic: ['shell', 'treasure_chest', 'whirlpool', 'shark_skeleton'] },
+  44: { duration: 54, region: 4, fuelCost: 255, storageCapacity: 10, seaColor: '#0D2137', skyColor: '#263238', weatherWeights: { sunny: 0.2, cloudy: 0.8 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 3, sea_rock: 2, coral: 1, anchor: 0 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat'] }, // Nefes
+  45: { duration: 48, region: 4, fuelCost: 280, storageCapacity: 10, seaColor: '#0D2137', skyColor: '#1A237E', weatherWeights: { stormy: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 5, sea_rock: 3, coral: 3, anchor: 2 }, dynamic: ['shell', 'treasure_chest', 'whirlpool', 'shark_skeleton'] },
+  46: { duration: 46, region: 4, fuelCost: 283, storageCapacity: 10, seaColor: '#0D2137', skyColor: '#1A237E', weatherWeights: { stormy: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 5, sea_rock: 4, coral: 3, anchor: 2 }, dynamic: ['shell', 'sunken_boat', 'whirlpool', 'shark_skeleton'] },
+  47: { duration: 47, region: 4, fuelCost: 286, storageCapacity: 10, seaColor: '#0D2137', skyColor: '#263238', weatherWeights: { sunny: 0.1, cloudy: 0.9 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 4, sea_rock: 3, coral: 2, anchor: 0 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat', 'whirlpool', 'shark_skeleton'] },
+  48: { duration: 46, region: 4, fuelCost: 289, storageCapacity: 10, seaColor: '#0D2137', skyColor: '#1A237E', weatherWeights: { stormy: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 5, sea_rock: 3, coral: 3, anchor: 2 }, dynamic: ['shell', 'treasure_chest', 'whirlpool', 'shark_skeleton'] },
+  49: { duration: 44, region: 4, fuelCost: 292, storageCapacity: 10, seaColor: '#0D2137', skyColor: '#1A237E', weatherWeights: { stormy: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 5, sea_rock: 4, coral: 4, anchor: 2 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat', 'whirlpool', 'shark_skeleton'] },
+  50: { duration: 62, region: 4, fuelCost: 320, storageCapacity: 10, seaColor: '#0A1929', skyColor: '#0D1B2A', weatherWeights: { stormy: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 6, sea_rock: 4, coral: 4, anchor: 3 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat', 'whirlpool', 'shark_skeleton'] }, // BOSS
 
-  // REGION 5: Efsane Adası
-  17: { duration: 56, region: 5, fuelCost: 0, seaColor: '#080C2B', skyColor: '#080C2B', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 6, sea_rock: 4, coral: 3, anchor: 2 }, dynamic: ['shark_skeleton', 'whirlpool'] },
-  18: { duration: 58, region: 5, fuelCost: 0, seaColor: '#080C2B', skyColor: '#080C2B', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 7, sea_rock: 4, coral: 3, anchor: 3 }, dynamic: ['shark_skeleton', 'whirlpool'] },
-  19: { duration: 60, region: 5, fuelCost: 0, seaColor: '#080C2B', skyColor: '#080C2B', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 7, sea_rock: 5, coral: 4, anchor: 3 }, dynamic: ['shark_skeleton', 'whirlpool'] },
-  20: { duration: 65, region: 5, fuelCost: 0, seaColor: '#080C2B', skyColor: '#080C2B', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 8, sea_rock: 5, coral: 4, anchor: 3 }, dynamic: ['shark_skeleton', 'whirlpool'] },
+  // ═══════════════════════════════════════════════
+  // REGION 5: Aurora Night (L51–L60)
+  // ═══════════════════════════════════════════════
+  51: { duration: 50, region: 5, fuelCost: 330, seaColor: '#120040', skyColor: '#0D0028', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 5, sea_rock: 4, coral: 3, anchor: 2 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat', 'whirlpool', 'shark_skeleton'] },
+  52: { duration: 48, region: 5, fuelCost: 333, seaColor: '#120040', skyColor: '#0D0028', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 5, sea_rock: 4, coral: 3, anchor: 2 }, dynamic: ['shell', 'sunken_boat', 'whirlpool', 'shark_skeleton'] },
+  53: { duration: 55, region: 5, fuelCost: 315, seaColor: '#120040', skyColor: '#0D0028', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 3, sea_rock: 2, coral: 2, anchor: 0 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat'] }, // Nefes
+  54: { duration: 48, region: 5, fuelCost: 336, seaColor: '#120040', skyColor: '#0D0028', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 5, sea_rock: 4, coral: 3, anchor: 2 }, dynamic: ['shell', 'treasure_chest', 'whirlpool', 'shark_skeleton'] },
+  55: { duration: 47, region: 5, fuelCost: 339, seaColor: '#120040', skyColor: '#0D0028', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 5, sea_rock: 3, coral: 5, anchor: 2 }, dynamic: ['shell', 'sunken_boat', 'whirlpool', 'shark_skeleton'] },
+  56: { duration: 47, region: 5, fuelCost: 342, seaColor: '#120040', skyColor: '#0D0028', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 5, sea_rock: 4, coral: 3, anchor: 2 }, dynamic: ['shell', 'treasure_chest', 'whirlpool', 'shark_skeleton'] },
+  57: { duration: 46, region: 5, fuelCost: 345, seaColor: '#120040', skyColor: '#0D0028', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 6, sea_rock: 4, coral: 3, anchor: 3 }, dynamic: ['shell', 'sunken_boat', 'whirlpool', 'shark_skeleton'] },
+  58: { duration: 46, region: 5, fuelCost: 348, seaColor: '#120040', skyColor: '#0D0028', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 6, sea_rock: 4, coral: 4, anchor: 2 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat', 'whirlpool', 'shark_skeleton'] },
+  59: { duration: 45, region: 5, fuelCost: 352, seaColor: '#120040', skyColor: '#0D0028', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 6, sea_rock: 5, coral: 4, anchor: 3 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat', 'whirlpool', 'shark_skeleton'] },
+  60: { duration: 65, region: 5, fuelCost: 380, seaColor: '#1A0040', skyColor: '#120030', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 7, sea_rock: 5, coral: 4, anchor: 3 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat', 'whirlpool', 'shark_skeleton'] }, // BOSS
+
+  // ═══════════════════════════════════════════════
+  // REGION 6: Crimson Night (L61–L70)
+  // ═══════════════════════════════════════════════
+  61: { duration: 50, region: 6, fuelCost: 390, seaColor: '#2D0010', skyColor: '#1A0008', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 6, sea_rock: 4, coral: 4, anchor: 2 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat', 'whirlpool', 'shark_skeleton'] },
+  62: { duration: 48, region: 6, fuelCost: 393, seaColor: '#2D0010', skyColor: '#1A0008', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 6, sea_rock: 4, coral: 4, anchor: 2 }, dynamic: ['shell', 'sunken_boat', 'whirlpool', 'shark_skeleton'], curse: 'agir_sular' },
+  63: { duration: 48, region: 6, fuelCost: 396, seaColor: '#2D0010', skyColor: '#1A0008', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 6, sea_rock: 4, coral: 3, anchor: 2 }, dynamic: ['shell', 'treasure_chest', 'whirlpool', 'shark_skeleton'], curse: 'hizli_akintiRR' },
+  64: { duration: 55, region: 6, fuelCost: 375, seaColor: '#2D0010', skyColor: '#1A0008', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 3, sea_rock: 2, coral: 2, anchor: 0 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat'], curse: 'none' },
+  65: { duration: 48, region: 6, fuelCost: 400, seaColor: '#2D0010', skyColor: '#1A0008', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 6, sea_rock: 5, coral: 4, anchor: 3 }, dynamic: ['shell', 'treasure_chest', 'whirlpool', 'shark_skeleton'], curse: 'kor_nokta' },
+  66: { duration: 48, region: 6, fuelCost: 403, seaColor: '#2D0010', skyColor: '#1A0008', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 6, sea_rock: 4, coral: 4, anchor: 2 }, dynamic: ['shell', 'sunken_boat', 'whirlpool', 'shark_skeleton'], curse: 'tersine_akintiR' },
+  67: { duration: 47, region: 6, fuelCost: 406, seaColor: '#2D0010', skyColor: '#1A0008', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 6, sea_rock: 5, coral: 4, anchor: 3 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat', 'whirlpool', 'shark_skeleton'], curse: 'cift_hasar' },
+  68: { duration: 55, region: 6, fuelCost: 385, seaColor: '#2D0010', skyColor: '#1A0008', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 3, sea_rock: 2, coral: 1, anchor: 0 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat'], curse: 'none' },
+  69: { duration: 47, region: 6, fuelCost: 410, seaColor: '#2D0010', skyColor: '#1A0008', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 6, sea_rock: 5, coral: 4, anchor: 3 }, dynamic: ['shell', 'sunken_boat', 'whirlpool', 'shark_skeleton'], curse: 'ekonomi_krizi' },
+  70: { duration: 68, region: 6, fuelCost: 430, seaColor: '#3D0018', skyColor: '#250010', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 8, sea_rock: 5, coral: 5, anchor: 3 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat', 'whirlpool', 'shark_skeleton'] }, // BOSS
+
+  // ═══════════════════════════════════════════════
+  // REGION 7: Neon Night / Chaos Dimension (L71–L80)
+  // ═══════════════════════════════════════════════
+  71: { duration: 50, region: 7, fuelCost: 440, seaColor: '#001A1A', skyColor: '#001226', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 6, sea_rock: 5, coral: 4, anchor: 3 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat', 'whirlpool', 'shark_skeleton'], curse: 'none' },
+  72: { duration: 48, region: 7, fuelCost: 443, seaColor: '#001A1A', skyColor: '#001226', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 7, sea_rock: 5, coral: 4, anchor: 3 }, dynamic: ['shell', 'sunken_boat', 'whirlpool', 'shark_skeleton'], curse: 'zincirleme' },
+  73: { duration: 48, region: 7, fuelCost: 446, seaColor: '#001A1A', skyColor: '#001226', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 7, sea_rock: 5, coral: 4, anchor: 3 }, dynamic: ['shell', 'treasure_chest', 'whirlpool', 'shark_skeleton'], curse: 'gorunmez_baliklar' },
+  74: { duration: 55, region: 7, fuelCost: 420, seaColor: '#001A1A', skyColor: '#001226', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 4, sea_rock: 3, coral: 2, anchor: 0 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat'], curse: 'none' },
+  75: { duration: 48, region: 7, fuelCost: 450, seaColor: '#001A1A', skyColor: '#001226', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 7, sea_rock: 5, coral: 5, anchor: 3 }, dynamic: ['shell', 'treasure_chest', 'whirlpool', 'shark_skeleton'], curse: 'geri_sayim' },
+  76: { duration: 48, region: 7, fuelCost: 453, seaColor: '#001A1A', skyColor: '#001226', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 7, sea_rock: 5, coral: 4, anchor: 3 }, dynamic: ['shell', 'sunken_boat', 'whirlpool', 'shark_skeleton'], curse: 'ters_market' },
+  77: { duration: 47, region: 7, fuelCost: 456, seaColor: '#001A1A', skyColor: '#001226', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 7, sea_rock: 5, coral: 4, anchor: 3 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat', 'whirlpool', 'shark_skeleton'], curse: 'skeleton_ordusu' },
+  78: { duration: 55, region: 7, fuelCost: 430, seaColor: '#001A1A', skyColor: '#001226', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 4, sea_rock: 3, coral: 2, anchor: 0 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat', 'whirlpool', 'shark_skeleton'], curse: 'none' },
+  79: { duration: 46, region: 7, fuelCost: 458, seaColor: '#001A1A', skyColor: '#001226', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 8, sea_rock: 5, coral: 5, anchor: 3 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat', 'whirlpool', 'shark_skeleton'], curse: 'rastgele_lanet' },
+  80: { duration: 70, region: 7, fuelCost: 480, seaColor: '#002020', skyColor: '#001830', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 8, sea_rock: 6, coral: 5, anchor: 4 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat', 'whirlpool', 'shark_skeleton'] }, // BOSS x2.0
+
+  // ═══════════════════════════════════════════════
+  // REGION 8: Golden Night / Legend Run (L81–L100)
+  // ═══════════════════════════════════════════════
+  81: { duration: 50, region: 8, fuelCost: 490, seaColor: '#1A1400', skyColor: '#0D0D00', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 7, sea_rock: 5, coral: 5, anchor: 3 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat', 'whirlpool', 'shark_skeleton'] },
+  82: { duration: 48, region: 8, fuelCost: 493, seaColor: '#1A1400', skyColor: '#0D0D00', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 7, sea_rock: 5, coral: 5, anchor: 3 }, dynamic: ['shell', 'sunken_boat', 'whirlpool', 'shark_skeleton'], curse: 'kombine_1' },
+  83: { duration: 47, region: 8, fuelCost: 496, seaColor: '#1A1400', skyColor: '#0D0D00', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 7, sea_rock: 5, coral: 5, anchor: 3 }, dynamic: ['shell', 'treasure_chest', 'whirlpool', 'shark_skeleton'], curse: 'kombine_2' },
+  84: { duration: 55, region: 8, fuelCost: 470, seaColor: '#1A1400', skyColor: '#0D0D00', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 4, sea_rock: 3, coral: 2, anchor: 0 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat'] }, // Nefes
+  85: { duration: 35, region: 8, fuelCost: 500, seaColor: '#1A1400', skyColor: '#0D0D00', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 7, sea_rock: 5, coral: 4, anchor: 3 }, dynamic: ['shell', 'treasure_chest', 'whirlpool', 'shark_skeleton'] }, // Lanet: 35sn süre
+  86: { duration: 48, region: 8, fuelCost: 503, seaColor: '#1A1400', skyColor: '#0D0D00', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 7, sea_rock: 5, coral: 4, anchor: 3 }, dynamic: ['shell', 'sunken_boat', 'whirlpool', 'shark_skeleton'], curse: 'ters_agirlik' }, // Lanet: Ters Gösterge
+  87: { duration: 47, region: 8, fuelCost: 506, seaColor: '#1A1400', skyColor: '#0D0D00', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 7, sea_rock: 6, coral: 5, anchor: 3 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat', 'whirlpool', 'shark_skeleton'], curse: 'balik_kacisi' },
+  88: { duration: 54, region: 8, fuelCost: 480, seaColor: '#1A1400', skyColor: '#0D0D00', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 4, sea_rock: 3, coral: 2, anchor: 0 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat', 'whirlpool', 'shark_skeleton'], curse: 'none' },
+  89: { duration: 46, region: 8, fuelCost: 508, seaColor: '#1A1400', skyColor: '#0D0D00', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 8, sea_rock: 6, coral: 5, anchor: 4 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat', 'whirlpool', 'shark_skeleton'], curse: 'kombine_3' },
+  90: { duration: 72, region: 8, fuelCost: 530, seaColor: '#201A00', skyColor: '#150F00', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 9, sea_rock: 6, coral: 6, anchor: 4 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat', 'whirlpool', 'shark_skeleton'] }, // BOSS x2.0
+  91: { duration: 50, region: 8, fuelCost: 540, seaColor: '#1A1400', skyColor: '#0D0D00', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 8, sea_rock: 6, coral: 5, anchor: 4 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat', 'whirlpool', 'shark_skeleton'] },
+  92: { duration: 48, region: 8, fuelCost: 543, seaColor: '#1A1400', skyColor: '#0D0D00', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 8, sea_rock: 6, coral: 5, anchor: 4 }, dynamic: ['shell', 'sunken_boat', 'whirlpool', 'shark_skeleton'], curse: 'saat_bombasi' },
+  93: { duration: 47, region: 8, fuelCost: 546, seaColor: '#1A1400', skyColor: '#0D0D00', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 8, sea_rock: 6, coral: 6, anchor: 4 }, dynamic: ['shell', 'treasure_chest', 'whirlpool', 'shark_skeleton'], curse: 'karanlik_madde' },
+  94: { duration: 55, region: 8, fuelCost: 520, seaColor: '#1A1400', skyColor: '#0D0D00', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 4, sea_rock: 3, coral: 2, anchor: 0 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat'], curse: 'none' },
+  95: { duration: 47, region: 8, fuelCost: 550, seaColor: '#1A1400', skyColor: '#0D0D00', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 9, sea_rock: 6, coral: 6, anchor: 4 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat', 'whirlpool', 'shark_skeleton'], curse: 'final_1' },
+  96: { duration: 46, region: 8, fuelCost: 553, seaColor: '#1A1400', skyColor: '#0D0D00', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 9, sea_rock: 6, coral: 6, anchor: 4 }, dynamic: ['shell', 'sunken_boat', 'whirlpool', 'shark_skeleton'], curse: 'final_2' },
+  97: { duration: 46, region: 8, fuelCost: 556, seaColor: '#1A1400', skyColor: '#0D0D00', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 9, sea_rock: 7, coral: 6, anchor: 5 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat', 'whirlpool', 'shark_skeleton'], curse: 'final_3' },
+  98: { duration: 45, region: 8, fuelCost: 558, seaColor: '#1A1400', skyColor: '#0D0D00', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 9, sea_rock: 7, coral: 6, anchor: 5 }, dynamic: ['shell', 'sunken_boat', 'treasure_chest', 'whirlpool', 'shark_skeleton'] },
+  99: { duration: 48, region: 8, fuelCost: 560, seaColor: '#1A1400', skyColor: '#0D0D00', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 9, sea_rock: 7, coral: 7, anchor: 5 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat', 'whirlpool', 'shark_skeleton'], curse: 'tek_sans' },
+  100: { duration: 75, region: 8, fuelCost: 600, seaColor: '#252000', skyColor: '#1A1800', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 10, sea_rock: 7, coral: 7, anchor: 5 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat', 'whirlpool', 'shark_skeleton'] }, // FINAL BOSS x2.5
 };
 
 export class GameEngine {
   private ctx: CanvasRenderingContext2D;
+  private bgCtx: CanvasRenderingContext2D;
+  private whirlpoolEl: HTMLImageElement | null = null;
   private state: GameState;
   private lastFrameTime: number = 0;
+  private timers: Record<string, number> = {};
   private onGameOver: (score: number, level: number, reason?: string) => void;
   private onScoreUpdate: (score: number) => void;
   private onLevelComplete: (level: number) => void;
@@ -72,9 +179,13 @@ export class GameEngine {
   public effects: GameEffects;
   private wasSubmerged: boolean = false;
   private hookLaunchMs: number = 0; // fırlatma animasyonu için timer
+  // Background layer optimizasyonu
+  private backgroundDirty: boolean = true;
 
   constructor(
     ctx: CanvasRenderingContext2D,
+    bgCtx: CanvasRenderingContext2D,
+    whirlpoolEl: HTMLImageElement | null,
     initialState: GameState,
     callbacks: {
       onGameOver: (score: number, level: number, reason?: string) => void;
@@ -84,6 +195,8 @@ export class GameEngine {
     }
   ) {
     this.ctx = ctx;
+    this.bgCtx = bgCtx;
+    this.whirlpoolEl = whirlpoolEl;
     this.state = initialState;
     this.onGameOver = callbacks.onGameOver;
     this.onScoreUpdate = callbacks.onScoreUpdate;
@@ -92,9 +205,15 @@ export class GameEngine {
 
     this.spriteManager = new SpriteManager(() => {
       this.assetsLoaded = true;
+      this.backgroundDirty = true; // sprites loaded — force BG redraw
     });
     this.spriteManager.loadImages(ASSETS);
     this.effects = new GameEffects(CANVAS_WIDTH, CANVAS_HEIGHT);
+  }
+
+  /** Mark background as needing redraw (call on level change, weather change, etc.) */
+  private invalidateBackground() {
+    this.backgroundDirty = true;
   }
 
   start() {
@@ -112,6 +231,29 @@ export class GameEngine {
       this.state.timeRemaining = config.duration;
       this.state.fuelCost = config.fuelCost;
       this.state.region = config.region;
+      this.state.activeCurse = config.curse || 'none';
+      this.state.curseTimerMs = 0;
+
+      // 'tek_sans' laneti: Sadece 1 olta hakkı ile başlanır
+      if (this.state.activeCurse === 'tek_sans') {
+        this.state.hookAttempts = 1;
+      } else {
+        this.state.hookAttempts = this.state.maxHookAttempts;
+      }
+    }
+    // Boss levellar — farklı çarpanlar:
+    // L10, L20, L30, L40, L50, L60, L70: x1.5
+    // L80, L90: x2.0
+    // L100: x2.5
+    const isBossLevel = this.state.level % 10 === 0;
+    if (this.state.level === 80 || this.state.level === 90) {
+      this.state.valueMultiplier = 2.0;
+    } else if (this.state.level === 100) {
+      this.state.valueMultiplier = 2.5;
+    } else if (isBossLevel) {
+      this.state.valueMultiplier = 1.5;
+    } else {
+      this.state.valueMultiplier = 1.0;
     }
     // Force reset hook state and angle/direction on start to prevent stuck oscillation
     this.state.hook.state = 'idle';
@@ -122,17 +264,27 @@ export class GameEngine {
     this.state.hook.y = SEA_LEVEL_Y;
     this.hookLaunchMs = 0;
     this.wasSubmerged = false;
+    this.backgroundDirty = true; // Force background redraw at start
 
     this.seedStaticObstacles();
     this.lastFrameTime = performance.now();
     requestAnimationFrame(this.loop);
   }
 
-  stop() {
+  public stop() {
     this.state.isPlaying = false;
   }
 
-  getState() {
+  public pause() {
+    this.state.isPaused = true;
+  }
+
+  public resume() {
+    this.state.isPaused = false;
+    this.lastFrameTime = performance.now(); // Reset frame time to avoid huge jump
+  }
+
+  public getState() {
     return this.state;
   }
 
@@ -145,17 +297,29 @@ export class GameEngine {
     if (this.state.hookAttempts <= 0) return;
     if (this.state.hook.state === 'idle' && !this.isArriving) {
       this.state.hook.state = 'shooting';
-      this.hookLaunchMs = 250; // fırlatma animasyonu tetiklendi (mechanical.md — fışkırma)
+      this.hookLaunchMs = 250; // launch animation triggered (mechanical.md — burst)
     }
   }
 
   private loop = (timestamp: number = 0) => {
     if (!this.state.isPlaying) return;
 
+    // 30fps throttle — sufficient for mobile performance
+    // 33ms = ~30fps; we cap to 30fps instead of 60fps if the device can't handle it
+    if (timestamp - this.lastFrameTime < 33 && !this.state.isPaused) {
+      requestAnimationFrame(this.loop);
+      return;
+    }
+
     const deltaTime = Math.min(timestamp - this.lastFrameTime, 50); // 50ms cap
     this.lastFrameTime = timestamp;
 
-    // Hit-stop: mantık güncelleme atla, çizimi devam ettir
+    if (this.state.isPaused) {
+      requestAnimationFrame(this.loop); // Keep requesting frames to check for unpause
+      return;
+    }
+
+    // Hit-stop: skip logic update, continue drawing
     this.effects.update(deltaTime, timestamp);
     if (!this.effects.isHitStopped) {
       this.update(deltaTime);
@@ -165,14 +329,16 @@ export class GameEngine {
     requestAnimationFrame(this.loop);
   };
 
-  private update(deltaTime: number) {
+  public update(deltaTime: number) {
+    if (!this.state.isPlaying || this.state.isPaused) return;
+
     if (this.isSinking) {
       this.sinkProgress += deltaTime / 2000;
       if (this.sinkProgress >= 1) {
         this.sinkProgress = 1;
         this.state.isPlaying = false;
         // Trigger game over with generic message
-        this.onGameOver(this.state.score, this.state.level, "Tekne battı! Çok ağır yük altında ezildi.");
+        this.onGameOver(this.state.score, this.state.level, "The boat sank! It was crushed under heavy load.");
       }
       return;
     }
@@ -249,6 +415,35 @@ export class GameEngine {
       this.state.hook.x = CANVAS_WIDTH / 2;
       this.state.hook.y = SEA_LEVEL_Y;
     }
+
+    // Lanet Periyodik Döngüleri
+    const curse = this.state.activeCurse;
+
+    // Geri sayım (geri_sayim veya final_2)
+    if (curse === 'geri_sayim' || curse === 'final_2') {
+      const timerKey = 'geriSayimTimer';
+      this.timers[timerKey] = (this.timers[timerKey] || 10000) - deltaTime;
+      if (this.timers[timerKey] <= 0) {
+        this.state.upgrades.storageCapacity = Math.max(30, this.state.upgrades.storageCapacity - 5);
+        this.recalculateStorage();
+        this.effects.shakeScreen(5, 10);
+        this.state.curseTimerMs = 0;
+        this.state.upgrades.storageCapacity = Math.max(10, this.state.upgrades.storageCapacity - 5);
+        this.recalculateStorage();
+      }
+    } else if (curse === 'saat_bombasi') {
+      this.state.curseTimerMs += deltaTime;
+      if (this.state.curseTimerMs >= 8000) { // Her 8 saniyede bir
+        this.state.curseTimerMs = 0;
+        if (this.state.inventory.length > 0) {
+          // Rastgele bir öğeyi sil
+          const idx = Math.floor(Math.random() * this.state.inventory.length);
+          this.state.inventory.splice(idx, 1);
+          this.recalculateStorage();
+          this.effects.shakeScreen(3, 5);
+        }
+      }
+    }
   }
 
   private pickWeather(): GameState['weather'] {
@@ -304,7 +499,7 @@ export class GameEngine {
     this.onScoreUpdate(this.state.score);
   }
 
-  private recalculateStorage() {
+  public recalculateStorage() {
     const actualWeight = this.state.inventory.reduce((sum, item) => sum + item.weight, 0);
     // currentStorage display value includes temporary buoyancy offsets (visual stress as per game_design 2.2)
     this.state.currentStorage = actualWeight + (this.state.buoyancyOffset || 0);
@@ -364,7 +559,15 @@ export class GameEngine {
       const maxAngle = Math.PI;
 
       // Tasarımdaki rad/frame değerini rad/ms'e çevirmek için ~0.06 çarpanı (1/16.6ms)
-      const oscillationSpeed = 0.06 * rod.swingMultiplier;
+      let oscillationSpeed = 0.06 * rod.swingMultiplier;
+
+      // 'rastgele_dongu' laneti: Salınım hızı sürekli değişir
+      if (this.state.activeCurse === 'rastgele_dongu') {
+        // Her 2 saniyede bir değişen hız çarpanı (0.3x ile 2.5x arası)
+        const speedVar = 1.4 + Math.sin(performance.now() * 0.003) * 1.1;
+        oscillationSpeed *= speedVar;
+      }
+
       if (hook.direction === 1) {
         hook.angle += oscillationSpeed * deltaTime;
         if (hook.angle >= maxAngle) {
@@ -505,27 +708,35 @@ export class GameEngine {
           continue;
         }
 
+        const rect = this.getEntityRect(fish);
+        const catchMultiplier = rod.catchMultiplier;
+
+        // Expand rect by catchMultiplier
+        const expandedW = rect.width * catchMultiplier;
+        const expandedH = rect.height * catchMultiplier;
+        const expandedX = rect.x - (expandedW - rect.width) / 2;
+        const expandedY = rect.y - (expandedH - rect.height) / 2;
+
+        const isCollision = hook.x >= expandedX &&
+          hook.x <= expandedX + expandedW &&
+          hook.y >= expandedY &&
+          hook.y <= expandedY + expandedH;
+
+        if (!isCollision) continue;
+
         if (fish.type === 'coral') {
-          const coralWidth = fish.radius * 4.8;
-          const coralHeight = fish.radius * 3.4;
-          const dx = Math.abs(hook.x - fish.x);
-          const dy = hook.y - (fish.y - coralHeight / 2);
-          if (dx < coralWidth * 0.4 && Math.abs(dy) < coralHeight * 0.35) {
-            hook.state = 'retracting';
-            hook.caughtEntity = null;
-            this.effects.spawnCoralHit(hook.x, hook.y);
-            if (rod.coralProtection === 0 || Math.random() > rod.coralProtection) {
-              this.updateHookAttempts(-1);
-            }
-            break;
+          hook.state = 'retracting';
+          hook.caughtEntity = null;
+          this.effects.spawnCoralHit(hook.x, hook.y);
+          if (rod.coralProtection === 0 || Math.random() > rod.coralProtection) {
+            const curse = this.state.activeCurse;
+            const damage = (curse === 'cift_hasar' || curse === 'kombine_2' || curse === 'final_1') ? -2 : -1;
+            this.updateHookAttempts(damage);
           }
-          continue;
+          break;
         }
 
-        const dist = Math.hypot(hook.x - fish.x, hook.y - fish.y);
-        const catchRadius = fish.radius * catchMultiplier;
-
-        if (fish.type === 'sea_kelp' && dist < fish.radius) {
+        if (fish.type === 'sea_kelp') {
           hook.state = 'retracting';
           hook.caughtEntity = null;
           this.effects.spawnKelpHit(hook.x, hook.y);
@@ -534,7 +745,7 @@ export class GameEngine {
           break;
         }
 
-        if (fish.type === 'sea_rock' && dist < fish.radius) {
+        if (fish.type === 'sea_rock') {
           hook.state = 'retracting';
           hook.caughtEntity = null;
           this.effects.spawnRockHit(hook.x, hook.y);
@@ -543,7 +754,7 @@ export class GameEngine {
           break;
         }
 
-        if (fish.type === 'anchor' && dist < fish.radius) {
+        if (fish.type === 'anchor') {
           hook.state = 'retracting';
           hook.caughtEntity = null;
           this.state.anchorSnagMs = 2000;
@@ -552,17 +763,18 @@ export class GameEngine {
           break;
         }
 
-        if (fish.type === 'sunken_boat' && dist < fish.radius) {
+        if (fish.type === 'sunken_boat') {
           hook.state = 'snagged';
           hook.caughtEntity = fish;
           break;
         }
 
-        if (fish.type === 'whirlpool' && dist < fish.radius) {
+        if (fish.type === 'whirlpool') {
           hook.state = 'whirlpool';
           hook.caughtEntity = null;
           this.whirlpoolCenter = { x: fish.x, y: fish.y };
           this.whirlpoolAngle = Math.atan2(hook.y - fish.y, hook.x - fish.x);
+          const dist = Math.hypot(hook.x - fish.x, hook.y - fish.y);
           this.whirlpoolRadius = Math.max(20, dist);
           this.whirlpoolTurns = 0;
           if (this.state.upgrades.boatLevel < 3) {
@@ -572,7 +784,7 @@ export class GameEngine {
           break;
         }
 
-        if (fish.type === 'shark_skeleton' && dist < fish.radius) {
+        if (fish.type === 'shark_skeleton') {
           hook.state = 'retracting';
           hook.caughtEntity = null;
           this.addScore(-10);
@@ -581,7 +793,7 @@ export class GameEngine {
           break;
         }
 
-        if (fish.type === 'env_bubbles' && dist < fish.radius) {
+        if (fish.type === 'env_bubbles') {
           hook.state = 'retracting';
           hook.caughtEntity = null;
           this.applyBubbleEffect();
@@ -589,14 +801,12 @@ export class GameEngine {
           break;
         }
 
-        if (dist < catchRadius) {
-          hook.state = 'retracting';
-          hook.caughtEntity = fish;
-          this.state.fishes.splice(i, 1);
-          // Yakalama anı titreşimi (mechanical.md — balık direniyor)
-          this.effects.shakeScreen(3, 3);
-          break;
-        }
+        // Standard catch
+        hook.state = 'retracting';
+        hook.caughtEntity = fish;
+        this.state.fishes.splice(i, 1);
+        this.effects.shakeScreen(3, 3);
+        break;
       }
     }
     else if (hook.state === 'whirlpool' && this.whirlpoolCenter) {
@@ -948,7 +1158,12 @@ export class GameEngine {
       }
 
       if (levelConfig.dynamic.includes('shark_skeleton')) {
-        const skChance = lv <= 9 ? 25 : lv <= 10 ? 30 : lv <= 11 ? 35 : lv <= 12 ? 38 : lv <= 13 ? 40 : lv <= 14 ? 44 : lv <= 15 ? 48 : lv <= 16 ? 50 : lv <= 17 ? 55 : lv <= 18 ? 58 : lv <= 19 ? 62 : 65;
+        let skChance = lv <= 9 ? 25 : lv <= 10 ? 30 : lv <= 11 ? 35 : lv <= 12 ? 38 : lv <= 13 ? 40 : lv <= 14 ? 44 : lv <= 15 ? 48 : lv <= 16 ? 50 : lv <= 17 ? 55 : lv <= 18 ? 58 : lv <= 19 ? 62 : 65;
+
+        // 'skeleton_ordusu' veya 'final_1' laneti: Skeleton şansı %80 artar
+        if (this.state.activeCurse === 'skeleton_ordusu' || this.state.activeCurse === 'final_1') {
+          skChance += 80;
+        }
         pool.push({ type: 'shark_skeleton', weight: skChance });
       }
 
@@ -1013,21 +1228,47 @@ export class GameEngine {
       } else {
         y = SEA_LEVEL_Y + 50 + Math.random() * (CANVAS_HEIGHT - SEA_LEVEL_Y - 150);
       }
+      let finalSpeed = speed;
+      let finalWeight = assetConfig.weightMultiplier;
+      let finalValue = assetConfig.value;
+      let finalDir: 1 | -1 = -1;
+
+      const curse = this.state.activeCurse;
+
+      // Hız çarpanları
+      if (curse === 'hizli_akintiRR' || curse === 'kombine_1' || curse === 'kombine_3' || curse === 'final_2') {
+        finalSpeed *= 1.5;
+      }
+
+      // Ağırlık çarpanları
+      if (curse === 'agir_sular' || curse === 'kombine_1' || curse === 'kombine_3') {
+        finalWeight *= 1.5;
+      }
+
+      // Değer çarpanları (Ekonomi Krizi)
+      if (curse === 'ekonomi_krizi' || curse === 'kombine_2' || curse === 'kombine_3') {
+        finalValue *= 0.7;
+      }
+
+      // Tersine akıntı: %30 şansla sağdan sola değil, soldan sağa giderler
+      if (curse === 'tersine_akintiR' && Math.random() < 0.3) {
+        finalDir = 1;
+      }
 
       this.state.fishes.push({
         id: Math.random(),
         type: fishClass,
         name,
-        x: CANVAS_WIDTH + 100,
+        x: finalDir === -1 ? CANVAS_WIDTH + 100 : -100, // Çıkış yönü
         y,
         startY: y,
         animationOffset: Math.random() * 1000,
-        speed,
-        value: assetConfig.value,
-        weight: assetConfig.weightMultiplier,
+        speed: finalSpeed,
+        value: Math.round(finalValue),
+        weight: finalWeight,
         color,
         radius: assetConfig.radius,
-        direction: -1
+        direction: finalDir
       });
     }
   }
@@ -1077,7 +1318,7 @@ export class GameEngine {
     }
     if (next === 0 && !this.isArriving && !this.isSinking) {
       this.state.isPlaying = false;
-      this.onGameOver(this.state.score, this.state.level, "Olta kullanılamaz! Tüm kancalar kırıldı.");
+      this.onGameOver(this.state.score, this.state.level, "Fishing rod unusable! All hooks are broken.");
     }
   }
 
@@ -1122,6 +1363,14 @@ export class GameEngine {
       else if (roll < 0.6) value -= 30;
     }
 
+    // 'balik_kacisi' veya 'final_3' laneti: Yakalanan balık %30 şansla kaçar
+    const curse = this.state.activeCurse;
+    if ((curse === 'balik_kacisi' || curse === 'final_3') && Math.random() < 0.3) {
+      this.effects.shakeScreen(5, 5);
+      this.effects.spawnSplash(caught.x, caught.y);
+      return; // Balık kaçtı, envantere ekleme
+    }
+
     const adjustedValue = Math.round(value * this.state.valueMultiplier);
     this.addInventoryItem({
       id: Math.random().toString(),
@@ -1130,6 +1379,35 @@ export class GameEngine {
       value: adjustedValue,
       weight: caught.weight
     });
+
+    // 'zincirleme' veya 'final_2' laneti: Yakınımdaki balıkları da çek
+    if (this.state.activeCurse === 'zincirleme' || this.state.activeCurse === 'final_2') {
+      const CHAIN_RADIUS = 80;
+      const nearby = this.state.fishes.filter(f => {
+        if (f.id === caught.id) return false;
+        const dist = Math.sqrt(Math.pow(f.x - caught.x, 2) + Math.pow(f.y - caught.y, 2));
+        return dist < CHAIN_RADIUS;
+      });
+
+      for (const extra of nearby) {
+        // Sadece gerçek balıkları çek (nesneleri değil)
+        const isActuallyFish = !OBJECT_MATRIX[extra.type].isObstacle && (extra.type !== 'env_bubbles' && extra.type !== 'shell' && extra.type !== 'treasure_chest' && extra.type !== 'sunken_boat' && extra.type !== 'anchor');
+        if (isActuallyFish) {
+          const extraValue = Math.round(extra.value * this.state.valueMultiplier);
+          this.addInventoryItem({
+            id: Math.random().toString(),
+            type: extra.type,
+            name: extra.name,
+            value: extraValue,
+            weight: extra.weight
+          });
+          // Ekran efekti
+          this.effects.spawnSplash(extra.x, extra.y);
+          // Balığı dünyadan sil
+          this.state.fishes = this.state.fishes.filter(f => f.id !== extra.id);
+        }
+      }
+    }
 
     // Efektler: Değere göre farklı efektler tetikle
     const baseValue = OBJECT_MATRIX[caught.type].value;
@@ -1338,39 +1616,35 @@ export class GameEngine {
     return `#${(r << 16 | g << 8 | b).toString(16).padStart(6, '0')}`;
   }
 
-  private drawWeatherEffects() {
+  private drawWeatherEffects(bx: CanvasRenderingContext2D) {
     if (this.state.weather === 'cloudy') {
-      this.ctx.fillStyle = 'rgba(0,0,0,0.08)';
-      this.ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+      bx.fillStyle = 'rgba(0,0,0,0.08)';
+      bx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     } else if (this.state.weather === 'rainy' || this.state.weather === 'stormy') {
-      this.ctx.fillStyle = this.state.weather === 'stormy' ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.12)';
-      this.ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-      this.ctx.strokeStyle = 'rgba(180,220,255,0.6)';
-      this.ctx.lineWidth = 1;
+      bx.fillStyle = this.state.weather === 'stormy' ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.12)';
+      bx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+      bx.strokeStyle = 'rgba(180,220,255,0.6)';
+      bx.lineWidth = 1;
       for (let i = 0; i < 20; i++) {
         const x = Math.random() * CANVAS_WIDTH;
         const y = Math.random() * CANVAS_HEIGHT;
-        this.ctx.beginPath();
-        this.ctx.moveTo(x, y);
-        this.ctx.lineTo(x + 4, y + 10);
-        this.ctx.stroke();
+        bx.beginPath();
+        bx.moveTo(x, y);
+        bx.lineTo(x + 4, y + 10);
+        bx.stroke();
       }
     } else if (this.state.weather === 'magic') {
-      this.ctx.fillStyle = 'rgba(123,31,162,0.12)';
-      this.ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+      bx.fillStyle = 'rgba(123,31,162,0.12)';
+      bx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     }
   }
 
-  private draw(timestamp: number = 0) {
-    this.ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-    const t = timestamp * 0.001; // saniye cinsinden
-
-    // Ambient: tekne su salınımı
-    const boatBobY = Math.sin(t * 0.04 * 60) * 2.5 + this.effects.boatBobY;
-    const boatRotation = Math.sin(t * 0.035 * 60) * (0.8 * Math.PI / 180);
-
-    // Ambient: olta ucu mikro titreme
-    const rodTweak = this.effects.applyRodTipAmbientation(timestamp);
+  /**
+   * Draw all static background elements onto bgCtx.
+   * Called only when backgroundDirty === true (level start, assets load, arrival, sinking).
+   */
+  private drawBackground(bgCtx: CanvasRenderingContext2D) {
+    bgCtx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
     const islandConfig = LEVEL_CONFIG[this.state.level];
     const hue = (this.state.level - 1) * 30;
@@ -1379,138 +1653,129 @@ export class GameEngine {
     const seaTop = islandConfig?.seaColor ?? '#29B6F6';
     const seaBottom = this.darkenColor(seaTop, 40);
 
-    const skyGradient = this.ctx.createLinearGradient(0, 0, 0, SEA_LEVEL_Y);
+    // Sky gradient
+    const skyGradient = bgCtx.createLinearGradient(0, 0, 0, SEA_LEVEL_Y);
     skyGradient.addColorStop(0, skyTop);
     skyGradient.addColorStop(1, skyBottom);
-    this.ctx.fillStyle = skyGradient;
-    this.ctx.fillRect(0, 0, CANVAS_WIDTH, SEA_LEVEL_Y);
+    bgCtx.fillStyle = skyGradient;
+    bgCtx.fillRect(0, 0, CANVAS_WIDTH, SEA_LEVEL_Y);
 
     if (this.state.weather === 'sunny' || this.state.weather === 'cloudy') {
-      this.drawSun(CANVAS_WIDTH - 60, 50);
+      this.drawSun(bgCtx, CANVAS_WIDTH - 60, 50);
     }
     if (this.state.weather !== 'magic') {
-      this.drawCloud(60, 40, 40);
-      this.drawCloud(150, 60, 30);
-      this.drawCloud(300, 45, 35);
+      this.drawCloud(bgCtx, 60, 40, 40);
+      this.drawCloud(bgCtx, 150, 60, 30);
+      this.drawCloud(bgCtx, 300, 45, 35);
     }
 
-    const seaGradient = this.ctx.createLinearGradient(0, SEA_LEVEL_Y, 0, CANVAS_HEIGHT);
+    // Sea gradient
+    const seaGradient = bgCtx.createLinearGradient(0, SEA_LEVEL_Y, 0, CANVAS_HEIGHT);
     seaGradient.addColorStop(0, seaTop);
     seaGradient.addColorStop(1, seaBottom);
-    this.ctx.fillStyle = seaGradient;
+    bgCtx.fillStyle = seaGradient;
 
-    // Wave surface effect
-    this.ctx.beginPath();
-    const time = performance.now() * 0.002;
-    this.ctx.moveTo(0, SEA_LEVEL_Y);
-    for (let x = 0; x <= CANVAS_WIDTH; x += 10) {
-      const y = SEA_LEVEL_Y + Math.sin(x * 0.02 + time) * 5;
-      this.ctx.lineTo(x, y);
-    }
-    this.ctx.lineTo(CANVAS_WIDTH, CANVAS_HEIGHT);
-    this.ctx.lineTo(0, CANVAS_HEIGHT);
-    this.ctx.closePath();
-    this.ctx.fill();
+    // Static sea surface (no wave animation — saves CPU per frame)
+    bgCtx.beginPath();
+    bgCtx.moveTo(0, SEA_LEVEL_Y);
+    bgCtx.lineTo(CANVAS_WIDTH, SEA_LEVEL_Y);
+    bgCtx.lineTo(CANVAS_WIDTH, CANVAS_HEIGHT);
+    bgCtx.lineTo(0, CANVAS_HEIGHT);
+    bgCtx.closePath();
+    bgCtx.fill();
 
-    this.drawWeatherEffects();
+    this.drawWeatherEffects(bgCtx);
 
     // Bottom Sand
-    this.ctx.fillStyle = `hsl(40, 100%, 80%)`;
-    this.ctx.fillRect(0, CANVAS_HEIGHT - 60, CANVAS_WIDTH, 60);
+    bgCtx.fillStyle = `hsl(40, 100%, 80%)`;
+    bgCtx.fillRect(0, CANVAS_HEIGHT - 60, CANVAS_WIDTH, 60);
 
-    // Draw Arrival Island
-    if (this.isArriving) {
-      const progress = Math.min(1, this.arrivalProgress);
-      // Island enters from right to left
-      // Start position (offscreen right) to end position (filling ~40% of screen)
-      const islandWidth = CANVAS_WIDTH * 0.6;
-      const islandX = CANVAS_WIDTH - (progress * islandWidth);
+    // Boss Level Altın Aura (her 10. level — x1.5 çarpan görsel işareti)
+    if (this.state.level % 10 === 0) {
+      const goldGradient = bgCtx.createRadialGradient(
+        CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, 0,
+        CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, CANVAS_HEIGHT * 0.7
+      );
+      goldGradient.addColorStop(0, 'rgba(255, 215, 0, 0.07)');
+      goldGradient.addColorStop(0.5, 'rgba(255, 180, 0, 0.05)');
+      goldGradient.addColorStop(1, 'rgba(255, 140, 0, 0)');
+      bgCtx.fillStyle = goldGradient;
+      bgCtx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-      // Gradient for sand/beach
-      const sandGradient = this.ctx.createLinearGradient(islandX, SEA_LEVEL_Y, CANVAS_WIDTH, CANVAS_HEIGHT);
-      sandGradient.addColorStop(0, '#FFE082'); // Wet sand
-      sandGradient.addColorStop(0.4, '#FFD54F'); // Dry sand
-      sandGradient.addColorStop(1, '#FFCA28'); // Deep sand
+      // Altın çerçeve (border glow)
+      bgCtx.strokeStyle = 'rgba(255, 215, 0, 0.35)';
+      bgCtx.lineWidth = 6;
+      bgCtx.strokeRect(3, 3, CANVAS_WIDTH - 6, CANVAS_HEIGHT - 6);
+    }
+  }
 
-      this.ctx.fillStyle = sandGradient;
-      this.ctx.beginPath();
+  private draw(timestamp: number = 0) {
+    const bx = this.bgCtx;
 
-      // Logarithmic/Exponential curve for coastline
-      // Starting from bottom right corner
-      this.ctx.moveTo(CANVAS_WIDTH, CANVAS_HEIGHT);
-      this.ctx.lineTo(CANVAS_WIDTH, SEA_LEVEL_Y - 50); // Top of hill/cliff
-
-      // Coastline curve dipping into water
-      // We simulate a natural slope: steep at top, flattening out under water
-      const steps = 20;
-      for (let i = 0; i <= steps; i++) {
-        const t = i / steps;
-        // x goes from islandX to CANVAS_WIDTH
-        // y follows a curve
-        const x = islandX + (CANVAS_WIDTH - islandX) * t;
-
-        // Log-like curve: y drops rapidly then flattens
-        // Let's use an exponential decay or simple power function for the slope
-        // At t=0 (waterline start), y should be deep underwater or at sea level?
-        // Let's make it slope UP from underwater to land
-
-        // Alternative: Draw from deep water up to surface
-        // Start deep underwater at islandX
-        // Curve up to surface level and then form a hill
-
-        // Let's try a cubic bezier for a nice slope
+    // Draw background only when needed (level change, arrival, sinking)
+    const needsBgRedraw = this.backgroundDirty || this.isArriving || this.isSinking;
+    if (needsBgRedraw) {
+      if (!this.isArriving && !this.isSinking) {
+        // Static scene — draw once and cache
+        this.drawBackground(bx);
+        this.backgroundDirty = false;
+      } else {
+        // Arrival / Sinking scenes change every frame — keep dirty but redraw each frame
+        this.drawBackground(bx);
+        this.drawArrivalOrSinking(bx);
       }
-
-      // Simpler approach with Bezier for premium feel
-      this.ctx.moveTo(CANVAS_WIDTH, CANVAS_HEIGHT); // Bottom right
-      this.ctx.lineTo(islandX - 100, CANVAS_HEIGHT); // Bottom left (underwater base)
-
-      // Curve up to sea level
-      // Control points to make it "logarithmic" - steep rise then flatten
-      this.ctx.bezierCurveTo(
-        islandX - 50, CANVAS_HEIGHT, // CP1
-        islandX, SEA_LEVEL_Y + 100,  // CP2
-        islandX + 20, SEA_LEVEL_Y    // End point at surface
-      );
-
-      // Continue up to form a hill/dune
-      this.ctx.bezierCurveTo(
-        islandX + 40, SEA_LEVEL_Y - 30, // CP1
-        CANVAS_WIDTH - 50, SEA_LEVEL_Y - 60, // CP2
-        CANVAS_WIDTH, SEA_LEVEL_Y - 50 // End point offscreen
-      );
-
-      this.ctx.closePath();
-      this.ctx.fill();
-
-      // Add some "vegetation" or detail on top
-      this.ctx.fillStyle = `hsl(${100 + hue}, 60%, 45%)`; // Greenish based on island
-      this.ctx.beginPath();
-      this.ctx.moveTo(islandX + 20, SEA_LEVEL_Y);
-      this.ctx.quadraticCurveTo(islandX + 60, SEA_LEVEL_Y - 40, CANVAS_WIDTH, SEA_LEVEL_Y - 20);
-      this.ctx.lineTo(CANVAS_WIDTH, SEA_LEVEL_Y);
-      this.ctx.closePath();
-      this.ctx.fill();
-
-      // Arrival Text
-      this.ctx.fillStyle = 'white';
-      this.ctx.font = 'bold 32px Fredoka';
-      this.ctx.textAlign = 'center';
-      this.ctx.shadowBlur = 10;
-      this.ctx.shadowColor = 'black';
-      this.ctx.fillText('ADA GÖRÜNDÜ!', CANVAS_WIDTH / 2, SEA_LEVEL_Y + 150);
-      this.ctx.shadowBlur = 0;
     }
 
-    // Island Start Text
+    // Level start text lives on bgCtx so it fades naturally
     if (this.state.timeRemaining > 57) {
-      this.ctx.fillStyle = 'white';
-      this.ctx.font = 'bold 48px Fredoka';
-      this.ctx.textAlign = 'center';
-      this.ctx.shadowBlur = 15;
-      this.ctx.shadowColor = 'black';
-      this.ctx.fillText(`${this.state.level}. LEVEL`, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
-      this.ctx.shadowBlur = 0;
+      const progress = Math.min(1, Math.max(0, (60 - this.state.timeRemaining) / 3));
+      bx.globalAlpha = 1 - progress;
+      bx.fillStyle = 'white';
+      bx.font = 'bold 48px Fredoka';
+      bx.textAlign = 'center';
+      bx.shadowBlur = 15;
+      bx.shadowColor = 'black';
+      bx.fillText(`${this.state.level}. LEVEL`, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+      bx.shadowBlur = 0;
+      bx.globalAlpha = 1;
+    }
+
+    // ── Game Canvas (dynamic objects) ────────────────────────────────────────
+    this.ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    const t = timestamp * 0.001; // seconds
+
+    // Ambient: tekne su salınımı
+    const boatBobY = Math.sin(t * 0.04 * 60) * 2.5 + this.effects.boatBobY;
+    const boatRotation = Math.sin(t * 0.035 * 60) * (0.8 * Math.PI / 180);
+
+    // Ambient: olta ucu mikro titreme
+    const rodTweak = this.effects.applyRodTipAmbientation(timestamp);
+
+    // ── Whirlpool DOM element (GPU CSS transform) ─────────────────────────────
+    if (this.whirlpoolEl) {
+      // Find active whirlpool fish
+      const wp = this.state.fishes.find(f => f.type === 'whirlpool');
+      if (wp) {
+        const spin = performance.now() * 0.004;
+        const scaleY = 0.55 + Math.sin(spin) * 0.35;
+        const sprite = this.spriteManager.getImage('fish_whirlpool');
+        // Compute canvas-relative pixel position for the DOM overlay
+        const canvasEl = this.ctx.canvas;
+        const scaleX = canvasEl.offsetWidth / CANVAS_WIDTH;
+        const scaleYCanvas = canvasEl.offsetHeight / CANVAS_HEIGHT;
+        const pxW = 110 * scaleX;
+        const pxH = 110 * scaleYCanvas;
+        const pxX = wp.x * scaleX - pxW / 2;
+        const pxY = wp.y * scaleYCanvas - pxH / 2;
+        this.whirlpoolEl.style.display = 'block';
+        this.whirlpoolEl.style.width = `${pxW}px`;
+        this.whirlpoolEl.style.height = `${pxH}px`;
+        this.whirlpoolEl.style.left = `${pxX}px`;
+        this.whirlpoolEl.style.top = `${pxY}px`;
+        this.whirlpoolEl.style.transform = `rotate(${spin}rad) scaleY(${scaleY})`;
+      } else {
+        this.whirlpoolEl.style.display = 'none';
+      }
     }
 
     // 3. Draw Boat & Fisherman (Screen Shake + Zoom transform burada uygulanıyor)
@@ -1557,10 +1822,9 @@ export class GameEngine {
     this.drawFisherman();
     this.drawFishingRod();
 
-    // 5. Draw Hook Line — misina bezier fizik eğrisiyle çiziliyor
+    // 5. Draw Hook Line
     const rod = this.getRodStats();
     const rodTip = this.getRodTipPosition();
-    // Ambient rod tip titremi uygula
     const tipX = rodTip.x + rodTweak.dx;
     const tipY = rodTip.y + rodTweak.dy;
 
@@ -1568,7 +1832,6 @@ export class GameEngine {
     const pivotY = SEA_LEVEL_Y;
 
     if (this.state.hookBrokenMs > 0) {
-      const progress = Math.min(1, Math.max(0, this.state.hookBrokenMs / this.hookBreakDuration));
       const midX = tipX + Math.cos(this.state.hook.angle) * 30;
       const midY = tipY + Math.sin(this.state.hook.angle) * 30;
       this.ctx.strokeStyle = '#D64545';
@@ -1581,13 +1844,11 @@ export class GameEngine {
       this.ctx.strokeStyle = '#D64545';
       this.ctx.lineWidth = rod.lineWidth;
 
-      // 1. Kamış ucundan su yüzeyi pivotuna düz çizgi
       this.ctx.beginPath();
       this.ctx.moveTo(tipX, tipY);
       this.ctx.lineTo(pivotX, pivotY);
       this.ctx.stroke();
 
-      // 2. Pivottan iğneye salınan misina (bezier fizik kaldırıldı, düz çizgi eklendi)
       this.ctx.lineTo(this.state.hook.x, this.state.hook.y);
       this.ctx.stroke();
 
@@ -1596,10 +1857,7 @@ export class GameEngine {
 
     if (this.state.hook.caughtEntity) {
       const entity = this.state.hook.caughtEntity;
-      // For sunken boat, we don't want to snap it to hook position or rotate it
       if (entity.type === 'sunken_boat') {
-        // Just ensure it's drawn, position is handled by update loop
-        // We pass isCaught=false to prevent rotation
         this.drawEntity(entity.x, entity.y, entity.radius, entity.color, entity.type, false, entity);
       } else {
         entity.x = this.state.hook.x;
@@ -1610,50 +1868,113 @@ export class GameEngine {
 
     this.ctx.restore();
 
-    // 8. Draw Swimming Entities (su blipleri altta)
+    // 8. Draw Swimming Entities (whirlpool drawn via DOM element, skip here)
     this.effects.drawUnder(this.ctx);
     for (const fish of this.state.fishes) {
       if (this.state.hook.caughtEntity && this.state.hook.caughtEntity.id === fish.id) continue;
+      if (fish.type === 'whirlpool') continue;
+
+      const curse = this.state.activeCurse;
+      const isObstacle = OBJECT_MATRIX[fish.type].isObstacle;
+      const isActuallyFish = !isObstacle && fish.type !== 'env_bubbles' && fish.type !== 'shell' && fish.type !== 'treasure_chest' && fish.type !== 'sunken_boat' && fish.type !== 'anchor' && fish.type !== 'shark_skeleton';
+
+      // Lanet Görünürlük Filtreleri
+      if (curse === 'karanlik_madde' && isObstacle) continue;
+      if ((curse === 'gorunmez_baliklar' || curse === 'final_1') && isActuallyFish) continue;
+
       this.drawEntity(fish.x, fish.y, fish.radius, fish.color, fish.type, false, fish);
     }
 
-    // 9. Efektler (partiküller, flash overlay — en üstte)
+    // 'kor_nokta' laneti: Üst kısımda koyu overlay
+    if (this.state.activeCurse === 'kor_nokta') {
+      const waterHeight = CANVAS_HEIGHT - SEA_LEVEL_Y;
+      const darkHeight = waterHeight * 0.4;
+      const gradient = this.ctx.createLinearGradient(0, SEA_LEVEL_Y, 0, SEA_LEVEL_Y + darkHeight);
+      gradient.addColorStop(0, 'rgba(0, 0, 0, 0.95)');
+      gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      this.ctx.fillStyle = gradient;
+      this.ctx.fillRect(0, SEA_LEVEL_Y, CANVAS_WIDTH, darkHeight);
+    }
+
+    // 9. Efektler (particles, flash overlay)
     this.effects.draw(this.ctx);
 
-    // 10. Vignette (son 10 saniyede gerilim)
+    // 10. Vignette (last 10 seconds)
     if (this.state.timeRemaining <= 10) {
       const intensity = Math.max(0, 1 - this.state.timeRemaining / 10);
       this.effects.drawVignette(this.ctx, intensity);
     }
   }
 
-  private drawSun(x: number, y: number) {
-    this.ctx.fillStyle = '#FFD700';
-    this.ctx.strokeStyle = '#FFA500';
-    this.ctx.lineWidth = 3;
-    this.ctx.beginPath();
-    this.ctx.arc(x, y, 25, 0, Math.PI * 2);
-    this.ctx.fill();
-    this.ctx.stroke();
+  /** Draw island arrival animation onto bgCtx (replaces static background while arriving) */
+  private drawArrivalOrSinking(bx: CanvasRenderingContext2D) {
+    const islandConfig = LEVEL_CONFIG[this.state.level];
+    const hue = (this.state.level - 1) * 30;
 
-    this.ctx.fillStyle = '#333';
-    this.ctx.beginPath();
-    this.ctx.arc(x - 8, y - 5, 2, 0, Math.PI * 2);
-    this.ctx.arc(x + 8, y - 5, 2, 0, Math.PI * 2);
-    this.ctx.fill();
-    this.ctx.beginPath();
-    this.ctx.arc(x, y + 5, 8, 0.1 * Math.PI, 0.9 * Math.PI);
-    this.ctx.stroke();
+    if (this.isArriving) {
+      const progress = Math.min(1, this.arrivalProgress);
+      const islandWidth = CANVAS_WIDTH * 0.6;
+      const islandX = CANVAS_WIDTH - (progress * islandWidth);
+
+      const sandGradient = bx.createLinearGradient(islandX, SEA_LEVEL_Y, CANVAS_WIDTH, CANVAS_HEIGHT);
+      sandGradient.addColorStop(0, '#FFE082');
+      sandGradient.addColorStop(0.4, '#FFD54F');
+      sandGradient.addColorStop(1, '#FFCA28');
+
+      bx.fillStyle = sandGradient;
+      bx.beginPath();
+      bx.moveTo(CANVAS_WIDTH, CANVAS_HEIGHT);
+      bx.lineTo(islandX - 100, CANVAS_HEIGHT);
+      bx.bezierCurveTo(islandX - 50, CANVAS_HEIGHT, islandX, SEA_LEVEL_Y + 100, islandX + 20, SEA_LEVEL_Y);
+      bx.bezierCurveTo(islandX + 40, SEA_LEVEL_Y - 30, CANVAS_WIDTH - 50, SEA_LEVEL_Y - 60, CANVAS_WIDTH, SEA_LEVEL_Y - 50);
+      bx.closePath();
+      bx.fill();
+
+      bx.fillStyle = `hsl(${100 + hue}, 60%, 45%)`;
+      bx.beginPath();
+      bx.moveTo(islandX + 20, SEA_LEVEL_Y);
+      bx.quadraticCurveTo(islandX + 60, SEA_LEVEL_Y - 40, CANVAS_WIDTH, SEA_LEVEL_Y - 20);
+      bx.lineTo(CANVAS_WIDTH, SEA_LEVEL_Y);
+      bx.closePath();
+      bx.fill();
+
+      bx.fillStyle = 'white';
+      bx.font = 'bold 32px Fredoka';
+      bx.textAlign = 'center';
+      bx.shadowBlur = 10;
+      bx.shadowColor = 'black';
+      bx.fillText('ADA GÖRÜNDÜ!', CANVAS_WIDTH / 2, SEA_LEVEL_Y + 150);
+      bx.shadowBlur = 0;
+    }
   }
 
-  private drawCloud(x: number, y: number, r: number) {
+  private drawSun(bx: CanvasRenderingContext2D, x: number, y: number) {
+    bx.fillStyle = '#FFD700';
+    bx.strokeStyle = '#FFA500';
+    bx.lineWidth = 3;
+    bx.beginPath();
+    bx.arc(x, y, 25, 0, Math.PI * 2);
+    bx.fill();
+    bx.stroke();
+
+    bx.fillStyle = '#333';
+    bx.beginPath();
+    bx.arc(x - 8, y - 5, 2, 0, Math.PI * 2);
+    bx.arc(x + 8, y - 5, 2, 0, Math.PI * 2);
+    bx.fill();
+    bx.beginPath();
+    bx.arc(x, y + 5, 8, 0.1 * Math.PI, 0.9 * Math.PI);
+    bx.stroke();
+  }
+
+  private drawCloud(bx: CanvasRenderingContext2D, x: number, y: number, r: number) {
     const safeRadius = Math.max(1, Math.abs(r));
-    this.ctx.fillStyle = '#FFFFFF';
-    this.ctx.beginPath();
-    this.ctx.arc(x, y, safeRadius, 0, Math.PI * 2);
-    this.ctx.arc(x + safeRadius, y - safeRadius / 2, safeRadius * 0.8, 0, Math.PI * 2);
-    this.ctx.arc(x - safeRadius, y - safeRadius / 2, safeRadius * 0.8, 0, Math.PI * 2);
-    this.ctx.fill();
+    bx.fillStyle = '#FFFFFF';
+    bx.beginPath();
+    bx.arc(x, y, safeRadius, 0, Math.PI * 2);
+    bx.arc(x + safeRadius, y - safeRadius / 2, safeRadius * 0.8, 0, Math.PI * 2);
+    bx.arc(x - safeRadius, y - safeRadius / 2, safeRadius * 0.8, 0, Math.PI * 2);
+    bx.fill();
   }
 
   // ── Sprite koordinatları (download.jpg için analiz edildi) ──────────────
@@ -1911,6 +2232,45 @@ export class GameEngine {
     }
 
     this.ctx.restore();
+  }
+
+  private getEntityRect(entity: Entity): { x: number; y: number; width: number; height: number } {
+    const config = OBJECT_MATRIX[entity.type];
+    const ratio = config.aspectRatio || 1;
+    let height = entity.radius * 4.5;
+    const isStatic = entity.type === 'coral' || entity.type === 'sea_kelp' || entity.type === 'sea_rock' || entity.type === 'anchor' || entity.type === 'shell' || entity.type === 'treasure_chest' || entity.type === 'sunken_boat';
+
+    // Match drawEntity logic constants
+    if (entity.type === 'bubble') height = 72;
+    else if (entity.type === 'sakura') height = 80;
+    else if (['zap', 'candy', 'moon', 'lava', 'crystal', 'leaf', 'tide', 'mushroom', 'king', 'galaxy'].includes(entity.type)) {
+      height = 80;
+      if (entity.type === 'king') height = 100;
+      if (entity.type === 'galaxy') height = 90;
+    } else if (entity.type === 'coral') height = 104;
+    else if (entity.type === 'sea_kelp') height = 100;
+    else if (entity.type === 'sea_rock') height = 60;
+    else if (entity.type === 'treasure_chest') height = 60;
+    else if (entity.type === 'whirlpool') height = 110;
+    else if (entity.type === 'sunken_boat') height = 120;
+    else if (entity.type === 'shark_skeleton') height = 60;
+    else if (entity.type === 'env_bubbles') height = 30;
+    else if (entity.type === 'anchor') height = 60;
+    else if (entity.type === 'shell') height = 20;
+
+    const width = height * ratio;
+
+    // Calculate top-left based on pivot
+    let rectX = entity.x - width / 2;
+    let rectY = entity.y - height / 2;
+
+    if (isStatic) {
+      // Pivot is bottom for most static objects in drawEntity
+      rectY = entity.y - height;
+      if (entity.type === 'sunken_boat') rectY = entity.y - height + 20;
+    }
+
+    return { x: rectX, y: rectY, width, height };
   }
 
   private isGalaxyHidden(fish: Entity) {
