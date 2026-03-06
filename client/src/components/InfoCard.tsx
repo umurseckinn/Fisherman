@@ -78,19 +78,19 @@ const ENTITY_DETAILS: Record<string, { description: string; effect?: string }> =
     },
     sunken_boat: {
         description: "Old wreckage blocking the way.",
-        effect: "Solid obstacle. Avoid hitting it."
+        effect: "Solid obstacle and very heavy (15 units). Avoid hitting it."
     },
     shark_skeleton: {
         description: "Bony remains of a deep sea predator.",
-        effect: "Worthless and gives a point penalty (-10 coins)."
+        effect: "Worthless and adds unwanted weight (4 units). Penalty: -10 coins."
     },
     anchor: {
         description: "Heavy rusty anchor found on the seabed.",
-        effect: "High market value if you can lift it."
+        effect: "High market value (200 coins) but very heavy (10 units)."
     },
     shell: {
         description: "Pretty sea shell with surprises inside.",
-        effect: "Gives +20 coins. May contain a small fish or a free hook repair."
+        effect: "Gives +20 coins. Size similar to Sakura Fish."
     }
 };
 

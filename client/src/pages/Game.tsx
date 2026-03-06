@@ -19,7 +19,7 @@ export default function Game() {
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState<number>(60);
   const [currentLevel, setCurrentLevel] = useState(1);
-  const [fuelCost, setFuelCost] = useState<number>(120);
+  const [fuelCost, setFuelCost] = useState<number>(50); // Doubled from 25
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [currentStorage, setCurrentStorage] = useState(0);
   const [buoyancyOffset, setBuoyancyOffset] = useState(0);
@@ -57,7 +57,7 @@ export default function Game() {
       score,
       level: currentLevel,
       region: levelConfig?.region ?? 1,
-      fuelCost: levelConfig?.fuelCost ?? 120,
+      fuelCost: levelConfig?.fuelCost ?? 50,
       timeRemaining: levelConfig?.duration ?? 60,
       isPlaying: true,
       weather: "sunny",
@@ -111,7 +111,7 @@ export default function Game() {
           setCurrentStorage(state.inventory.reduce((sum, item) => sum + item.weight, 0));
           setHookAttempts(state.hookAttempts || 0);
           setMaxHookAttempts(state.maxHookAttempts || 0);
-          setFuelCost(state.fuelCost || 120);
+          setFuelCost(state.fuelCost || 50);
 
           if (state.upgrades) {
             setUpgrades(prev => ({
@@ -210,7 +210,7 @@ export default function Game() {
 
   const upgradeRod = () => {
     if (upgrades.rodLevel >= 3) return;
-    let baseCost = upgrades.rodLevel === 1 ? 100 : 220;
+    let baseCost = upgrades.rodLevel === 1 ? 200 : 440; // Doubled (100 -> 200, 220 -> 440)
     const isTersMarket = activeCurse === 'ters_market' || activeCurse === 'final_3';
     const finalCost = isTersMarket ? Math.round(baseCost * 1.5) : baseCost;
 
@@ -233,7 +233,7 @@ export default function Game() {
 
   const upgradeBoat = () => {
     if (upgrades.boatLevel >= 3) return;
-    let baseCost = upgrades.boatLevel === 1 ? 180 : 380;
+    let baseCost = upgrades.boatLevel === 1 ? 360 : 760; // Doubled (180 -> 360, 380 -> 760)
     const isTersMarket = activeCurse === 'ters_market' || activeCurse === 'final_3';
     const finalCost = isTersMarket ? Math.round(baseCost * 1.5) : baseCost;
 
@@ -257,6 +257,7 @@ export default function Game() {
   };
 
   const repairHook = (amount: number, cost: number) => {
+    // cost is passed from UI, but we should double it here or where it's called
     if (hookAttempts >= maxHookAttempts || score < cost) return;
     const newScore = score - cost;
     const newAttempts = Math.min(maxHookAttempts, hookAttempts + amount);
@@ -274,7 +275,7 @@ export default function Game() {
     setCurrentLevel(prev => {
       const nextLevel = prev + 1;
       const config = LEVEL_CONFIG[nextLevel as keyof typeof LEVEL_CONFIG];
-      setFuelCost(config?.fuelCost ?? 120);
+      setFuelCost(config?.fuelCost ?? 50);
       return nextLevel;
     });
     setUpgrades(prev => ({ ...prev, hasFuel: false }));
@@ -336,7 +337,11 @@ export default function Game() {
   };
 
   return (
-    <div className="relative w-full h-screen bg-slate-900 flex items-center justify-center overflow-hidden">
+    <div className="relative w-full h-screen bg-slate-900 flex items-center justify-center overflow-hidden"
+      style={{
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingBottom: 'env(safe-area-inset-bottom)'
+      }}>
       <div className="relative w-full h-full max-w-[450px] max-h-[800px] bg-sky-100 shadow-2xl overflow-hidden md:rounded-[32px] md:border-8 md:border-slate-800">
 
         {/* Playable Area */}
@@ -472,17 +477,17 @@ export default function Game() {
                       <Fuel className="w-4 h-4" />
                       <span className="text-[10px] leading-tight">Buy Fuel (${activeCurse === 'ters_market' || activeCurse === 'final_3' ? Math.round(fuelCost * 1.5) : fuelCost})</span>
                     </Button>
-                    <Button onClick={() => repairHook(1, 30)} disabled={hookAttempts >= maxHookAttempts || score < 30} variant="default" className="flex flex-col h-auto p-2 gap-1 bg-amber-500 hover:bg-amber-600 text-white">
+                    <Button onClick={() => repairHook(1, 60)} disabled={hookAttempts >= maxHookAttempts || score < 60} variant="default" className="flex flex-col h-auto p-2 gap-1 bg-amber-500 hover:bg-amber-600 text-white">
                       <Anchor className="w-4 h-4" />
-                      <span className="text-[10px] leading-tight">Repair +1 (30🪙)</span>
+                      <span className="text-[10px] leading-tight">Repair +1 (60🪙)</span>
                     </Button>
-                    <Button onClick={upgradeRod} disabled={upgrades.rodLevel >= 3 || score < (upgrades.rodLevel === 1 ? 100 : 220)} className="flex flex-col h-auto p-2 gap-1 bg-blue-500 hover:bg-blue-600 text-white">
+                    <Button onClick={upgradeRod} disabled={upgrades.rodLevel >= 3 || score < (upgrades.rodLevel === 1 ? 200 : 440)} className="flex flex-col h-auto p-2 gap-1 bg-blue-500 hover:bg-blue-600 text-white">
                       <Zap className="w-4 h-4" />
-                      <span className="text-[10px] leading-tight">Rod Lv{upgrades.rodLevel + 1}</span>
+                      <span className="text-[10px] leading-tight">Rod Lv{upgrades.rodLevel + 1} (${upgrades.rodLevel === 1 ? 200 : 440})</span>
                     </Button>
-                    <Button onClick={upgradeBoat} disabled={upgrades.boatLevel >= 3 || score < (upgrades.boatLevel === 1 ? 180 : 380)} className="flex flex-col h-auto p-2 gap-1 bg-purple-500 hover:bg-purple-600 text-white">
+                    <Button onClick={upgradeBoat} disabled={upgrades.boatLevel >= 3 || score < (upgrades.boatLevel === 1 ? 360 : 760)} className="flex flex-col h-auto p-2 gap-1 bg-purple-500 hover:bg-purple-600 text-white">
                       <Anchor className="w-4 h-4" />
-                      <span className="text-[10px] leading-tight">Boat Lv{upgrades.boatLevel + 1}</span>
+                      <span className="text-[10px] leading-tight">Boat Lv{upgrades.boatLevel + 1} (${upgrades.boatLevel === 1 ? 360 : 760})</span>
                     </Button>
                   </div>
                 </CardContent>

@@ -152,6 +152,11 @@ export const LEVEL_CONFIG: Record<number, {
   100: { duration: 75, region: 8, fuelCost: 600, seaColor: '#252000', skyColor: '#1A1800', weatherWeights: { magic: 1 }, fish: ['bubble', 'sakura', 'zap', 'candy', 'moon', 'lava', 'tide', 'leaf', 'crystal', 'galaxy', 'mushroom', 'king'], obstacles: { sea_kelp: 10, sea_rock: 7, coral: 7, anchor: 5 }, dynamic: ['shell', 'treasure_chest', 'sunken_boat', 'whirlpool', 'shark_skeleton'] }, // FINAL BOSS x2.5
 };
 
+// Double all fuel costs at runtime for balance
+Object.values(LEVEL_CONFIG).forEach(config => {
+  config.fuelCost *= 2;
+});
+
 export class GameEngine {
   private ctx: CanvasRenderingContext2D;
   private bgCtx: CanvasRenderingContext2D;
@@ -467,17 +472,15 @@ export class GameEngine {
     const spawnStatic = (type: FishClass, count: number) => {
       for (let i = 0; i < count; i++) {
         const configEntry = OBJECT_MATRIX[type];
-        let y = CANVAS_HEIGHT - 60 + Math.random() * 20;
+        // All bottom elements (kelp, rock, coral, anchor, chest, shell, boat) MUST be at the exact same depth
+        const isBottom = ['sea_rock_large', 'sea_kelp', 'anchor', 'coral', 'treasure_chest', 'shell', 'sunken_boat'].includes(type);
+        let y = isBottom ? CANVAS_HEIGHT - 5 : CANVAS_HEIGHT - 60 + Math.random() * 20;
         let x = 40 + Math.random() * (CANVAS_WIDTH - 80);
 
         // Special placement for specific types
-        if (type === 'sea_rock') {
+        if (type === 'sea_rock' && !isBottom) {
           // Keep some small rocks floating (user request)
           y = SEA_LEVEL_Y + 150 + Math.random() * (CANVAS_HEIGHT - SEA_LEVEL_Y - 250);
-        } else if (type === 'sea_rock_large' || type === 'sea_kelp' || type === 'anchor' || type === 'coral') {
-          // Bottom dwelling objects anchored/embedded in sand
-          // We use CANVAS_HEIGHT - offset to ensure they sit on the bottom
-          y = CANVAS_HEIGHT - 5 - Math.random() * 5;
         } else if (type === 'sea_kelp_horizontal') {
           // Mid-to-upper water kelp (user request: rotated variant)
           y = SEA_LEVEL_Y + 100 + Math.random() * 150;
@@ -506,6 +509,13 @@ export class GameEngine {
     spawnStatic('sea_rock', Math.ceil(config.obstacles.sea_rock * 0.6)); // Smaller floating ones
     spawnStatic('coral', config.obstacles.coral);
     spawnStatic('anchor', config.obstacles.anchor);
+
+    // Also handle bottom dynamic objects here to ensure they are on the seabed
+    config.dynamic?.forEach(type => {
+      if (['treasure_chest', 'shell', 'sunken_boat'].includes(type)) {
+        spawnStatic(type, type === 'shell' ? 2 : 1);
+      }
+    });
   }
 
   private addScore(amount: number) {
@@ -1286,6 +1296,8 @@ export class GameEngine {
       });
     }
   }
+
+
 
   private ensureAmbientBubbles() {
     // game_design Bölüm 3: Baloncuk sayısı level'e göre azalır
@@ -2069,6 +2081,11 @@ export class GameEngine {
 
       this.ctx.save();
       this.ctx.translate(x, y);
+
+      // Scaling effect for large objects when caught
+      if (this.state.hook.caughtEntity && ['treasure_chest', 'anchor', 'sunken_boat', 'sea_rock_large'].includes(this.state.hook.caughtEntity.type)) {
+        this.ctx.scale(0.6, 0.6);
+      }
       this.ctx.scale(launchScale, launchScale);
       this.ctx.rotate(this.state.hook.angle - Math.PI / 2);
       this.ctx.strokeStyle = '#8B4513';
