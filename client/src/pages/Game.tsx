@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
-import { ArrowLeft, Clock, DollarSign, Fuel, ShoppingBag, Zap, Anchor, Pause, RotateCcw, Home as HomeIcon, Play } from "lucide-react";
+import { ArrowLeft, Clock, DollarSign, Fuel, ShoppingBag, Zap, Anchor, Pause, RotateCcw, Home as HomeIcon, Play, Bomb, X } from "lucide-react";
 import { GameEngine, CANVAS_WIDTH, CANVAS_HEIGHT, SEA_LEVEL_Y, LEVEL_CONFIG } from "@/game/GameEngine";
 import { type GameState, type Entity, type CurseType, type InventoryItem, type FishClass } from "@/game/types";
 import { GameOverModal } from "@/components/GameOverModal";
 import { InfoCard } from "@/components/InfoCard";
+import { BoosterPurchaseModal, type BoosterType } from "@/components/BoosterPurchaseModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import confetti from "canvas-confetti";
@@ -18,6 +19,7 @@ export default function Game() {
 
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState<number>(60);
+  const [anchorEffectTimer, setAnchorEffectTimer] = useState(0);
   const [currentLevel, setCurrentLevel] = useState(1);
   const [fuelCost, setFuelCost] = useState<number>(50); // Doubled from 25
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
@@ -32,6 +34,8 @@ export default function Game() {
   const [selectedEntityForInfo, setSelectedEntityForInfo] = useState<FishClass | null>(null);
   const [gameOverReason, setGameOverReason] = useState<string | null>(null);
   const [isPaused, setIsPaused] = useState(false);
+  const [purchaseModalOpen, setPurchaseModalOpen] = useState(false);
+  const [purchaseBoosterType, setPurchaseBoosterType] = useState<BoosterType | null>(null);
 
   const [upgrades, setUpgrades] = useState({
     rodLevel: 1,
@@ -43,7 +47,12 @@ export default function Game() {
     speed: false,
     lucky: false,
     value: false,
+    harpoon: 0,
+    net: 0,
+    tnt: 0,
+    anchor: 0,
   });
+  const [selectedBooster, setSelectedBooster] = useState<'harpoon' | 'net' | 'tnt' | 'anchor' | null>(null);
 
   useEffect(() => {
     if (!canvasRef.current || !bgCanvasRef.current || gameState !== "playing") return;
@@ -93,6 +102,8 @@ export default function Game() {
       activeCurse: 'none',
       curseTimerMs: 0,
       boosters: activeBoosters,
+      activeBooster: selectedBooster,
+      anchorEffectTimerMs: 0,
       isPaused: false
     };
 
@@ -124,8 +135,11 @@ export default function Game() {
           }
         }
         setCurrentLevel(level);
-        const resetBoosters = { speed: false, lucky: false, value: false };
-        setActiveBoosters(resetBoosters);
+        if (state) {
+          // Keep the existing boosters instead of resetting them
+          setActiveBoosters(prev => ({ ...prev }));
+        }
+        setSelectedBooster(null);
 
         if (level >= 100) {
           setGameState("win");
@@ -138,6 +152,10 @@ export default function Game() {
       onFishCaught: (fish) => {
         setCaughtFish(fish);
         setTimeout(() => setCaughtFish(null), 2000);
+      },
+      onBoosterUsed: (type: 'harpoon' | 'net' | 'tnt' | 'anchor') => {
+        setActiveBoosters(prev => ({ ...prev, [type]: prev[type] - 1 }));
+        setSelectedBooster(null);
       }
     });
 
@@ -153,6 +171,7 @@ export default function Game() {
         setCurrentStorage(state.inventory.reduce((sum, item) => sum + item.weight, 0));
         setBuoyancyOffset(state.buoyancyOffset || 0);
         setWeightDisplayOffset(state.weightDisplayOffset || 0);
+        setAnchorEffectTimer(state.anchorEffectTimerMs || 0);
         setHookAttempts(state.hookAttempts || 0);
         setMaxHookAttempts(state.maxHookAttempts || 0);
         setActiveCurse(state.activeCurse || 'none');
@@ -176,6 +195,54 @@ export default function Game() {
       clearInterval(uiSync);
     };
   }, [gameState, currentLevel]);
+
+  useEffect(() => {
+    if (engineRef.current) {
+      engineRef.current.getState().activeBooster = selectedBooster;
+    }
+  }, [selectedBooster]);
+
+  // Check for Fuel Soft-lock (Game Over condition in Shop)
+  useEffect(() => {
+    if (gameState === 'shop' && !upgrades.hasFuel) {
+      const isTersMarket = activeCurse === 'ters_market' || activeCurse === 'final_3';
+      const finalCost = isTersMarket ? Math.round(fuelCost * 1.5) : fuelCost;
+
+      if (score < finalCost && inventory.length === 0) {
+        // Delay slightly to let the shop render first before jumping to game over
+        const timer = setTimeout(() => {
+          setGameState("gameover");
+          setGameOverReason("Out of fuel and out of money!");
+          if (engineRef.current) {
+            engineRef.current.stop();
+          }
+        }, 1500);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [gameState, upgrades.hasFuel, score, inventory.length, fuelCost, activeCurse]);
+
+  const handlePurchase = (pkg: { type: 'all' | 'single', amount: number }) => {
+    if (!purchaseBoosterType) return;
+
+    setActiveBoosters(prev => {
+      const next = { ...prev };
+      if (pkg.type === 'all') {
+        next.harpoon += pkg.amount;
+        next.net += pkg.amount;
+        next.tnt += pkg.amount;
+        next.anchor += pkg.amount;
+      } else {
+        next[purchaseBoosterType] += pkg.amount;
+      }
+
+      if (engineRef.current) {
+        engineRef.current.getState().boosters = { ...next };
+      }
+
+      return next;
+    });
+  };
 
   const handleSellAll = () => {
     const isTersMarket = activeCurse === 'ters_market' || activeCurse === 'final_3';
@@ -349,9 +416,13 @@ export default function Game() {
           <>
             <div className="absolute top-0 left-0 right-0 p-4 z-10 flex justify-between items-start pointer-events-none">
               <div className="flex gap-2 items-center pointer-events-auto">
-                <div className="bg-[#99E5FF] border-2 border-white rounded-2xl px-3 py-1.5 shadow-md flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-white fill-[#FFB347]" />
-                  <span className="text-xl font-display font-bold text-white">{formatTime(timeLeft)}</span>
+                <div className={`border-2 border-white rounded-2xl px-3 py-1.5 shadow-md flex items-center gap-2 ${anchorEffectTimer > 0 ? 'bg-green-500 animate-pulse' : 'bg-[#99E5FF]'}`}>
+                  <Clock className={`w-5 h-5 text-white ${anchorEffectTimer > 0 ? 'fill-green-700' : 'fill-[#FFB347]'}`} />
+                  <span className="text-xl font-display font-bold text-white">
+                    {anchorEffectTimer > 0
+                      ? formatTime(Math.ceil(anchorEffectTimer / 1000))
+                      : formatTime(timeLeft)}
+                  </span>
                 </div>
                 <button
                   onClick={togglePause}
@@ -391,7 +462,31 @@ export default function Game() {
               </div>
             </div>
             <canvas ref={bgCanvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} className="absolute inset-0 w-full h-full block" style={{ zIndex: 0 }} />
-            <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} onClick={() => engineRef.current?.handleInput()} className="absolute inset-0 w-full h-full block touch-none" style={{ zIndex: 1 }} />
+            <canvas
+              ref={canvasRef}
+              width={CANVAS_WIDTH}
+              height={CANVAS_HEIGHT}
+              onPointerDown={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * CANVAS_WIDTH;
+                const y = ((e.clientY - rect.top) / rect.height) * CANVAS_HEIGHT;
+                engineRef.current?.handlePointerDown(x, y);
+              }}
+              onPointerMove={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * CANVAS_WIDTH;
+                const y = ((e.clientY - rect.top) / rect.height) * CANVAS_HEIGHT;
+                engineRef.current?.handlePointerMove(x, y);
+              }}
+              onPointerUp={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * CANVAS_WIDTH;
+                const y = ((e.clientY - rect.top) / rect.height) * CANVAS_HEIGHT;
+                engineRef.current?.handlePointerUp(x, y);
+              }}
+              className="absolute inset-0 w-full h-full block touch-none"
+              style={{ zIndex: 1 }}
+            />
             <img
               ref={whirlpoolImgRef}
               src="/assets/environment/whirlpool.png"
@@ -411,22 +506,64 @@ export default function Game() {
               <div className="absolute left-4 z-50 pointer-events-auto" style={{ top: SEA_LEVEL_Y - 140 }}>
                 <button
                   onClick={() => handleEntityInfoOpen(caughtFish.type as FishClass)}
-                  className="bg-white/50 backdrop-blur-md p-3 rounded-2xl shadow-[0_12px_24px_rgba(0,0,0,0.08)] border-2 border-white/50 flex flex-col items-center text-center animate-in zoom-in-50 duration-300 w-36 group hover:scale-105 active:scale-95 transition-all"
+                  className="bg-white/50 backdrop-blur-md p-2 rounded-2xl shadow-[0_12px_24px_rgba(0,0,0,0.08)] border-2 border-white/50 flex flex-col items-center text-center animate-in zoom-in-50 duration-300 w-[100px] group hover:scale-105 active:scale-95 transition-all"
                 >
-                  <div className="w-24 h-16 mb-2 flex items-center justify-center relative">
-                    <div className="absolute inset-0 bg-blue-100 rounded-full opacity-25 blur-lg scale-90 group-hover:scale-110 transition-transform animate-pulse"></div>
+                  <div className="w-20 h-14 mb-1 flex items-center justify-center relative">
+                    <div className="absolute inset-0 bg-blue-100 rounded-full opacity-25 blur-lg scale-110 group-hover:scale-125 transition-transform animate-pulse"></div>
                     <img
-                      src={['coral', 'treasure_chest', 'whirlpool', 'sunken_boat', 'shark_skeleton', 'env_bubbles', 'anchor', 'shell', 'sea_kelp', 'sea_rock'].includes(caughtFish.type) ? `/assets/environment/${caughtFish.type === 'env_bubbles' ? 'bubbles' : caughtFish.type}.png` : `/assets/fish/${caughtFish.type}_fish.png`}
+                      src={['coral', 'treasure_chest', 'whirlpool', 'sunken_boat', 'shark_skeleton', 'env_bubbles', 'anchor', 'shell', 'sea_kelp', 'sea_rock', 'sea_rock_large', 'sea_kelp_horizontal'].includes(caughtFish.type) ? `/assets/environment/${caughtFish.type === 'env_bubbles' ? 'bubbles' : caughtFish.type}.png` : `/assets/fish/${caughtFish.type}_fish.png`}
                       alt={caughtFish.name}
-                      className="w-full h-full object-contain drop-shadow-md relative z-10"
+                      className="w-full h-full object-contain drop-shadow-md relative z-10 scale-125"
                       onError={(e) => { e.currentTarget.style.display = 'none'; }}
                     />
                   </div>
-                  <h2 className="text-sm font-display font-bold text-slate-800">{caughtFish.name}</h2>
-                  <div className="mt-1 bg-primary/20 text-primary text-[10px] px-2 py-0.5 rounded-full font-bold">INFO</div>
+                  <h2 className="text-[11px] font-display font-bold text-slate-800 leading-tight mb-1">{caughtFish.name}</h2>
+                  <div className="bg-primary/20 text-primary text-[8px] px-2 py-0.5 rounded-full font-bold">INFO</div>
                 </button>
               </div>
             )}
+
+            {/* Booster Selection Buttons */}
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-3">
+              {[
+                { id: 'harpoon', icon: Zap, label: 'Harpoon', count: activeBoosters.harpoon },
+                { id: 'net', icon: ShoppingBag, label: 'Net', count: activeBoosters.net },
+                { id: 'tnt', icon: Bomb, label: 'TNT', count: activeBoosters.tnt },
+                { id: 'anchor', icon: Anchor, label: 'Anchor', count: activeBoosters.anchor },
+              ].map((booster) => (
+                <button
+                  key={booster.id}
+                  onClick={() => {
+                    if (booster.count === 0) {
+                      setPurchaseBoosterType(booster.id as BoosterType);
+                      setPurchaseModalOpen(true);
+                      if (engineRef.current) {
+                        engineRef.current.pause();
+                        setIsPaused(true);
+                      }
+                    } else {
+                      setSelectedBooster(prev => prev === booster.id ? null : booster.id as any);
+                    }
+                  }}
+                  className={`relative w-12 h-12 flex items-center justify-center rounded-2xl border-2 transition-all shadow-lg ${booster.count === 0
+                    ? 'bg-slate-100 border-slate-200 text-slate-300 opacity-50 grayscale'
+                    : selectedBooster === booster.id
+                      ? 'bg-blue-500 border-white text-white scale-110'
+                      : 'bg-white border-blue-100 text-blue-500 hover:border-blue-300'
+                    }`}
+                >
+                  <booster.icon className="w-6 h-6" />
+                  <span className="absolute -bottom-1 -right-1 bg-red-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-bold border border-white">
+                    {booster.count}
+                  </span>
+                  {selectedBooster === booster.id && (
+                    <div className="absolute -top-1 -right-1 bg-white text-red-500 rounded-full w-5 h-5 flex items-center justify-center shadow-md animate-in zoom-in-50">
+                      <X className="w-3 h-3" />
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
           </>
         )}
 
@@ -557,6 +694,21 @@ export default function Game() {
               onClose={() => setSelectedEntityForInfo(null)}
             />
           </div>
+        )}
+
+        {purchaseBoosterType && (
+          <BoosterPurchaseModal
+            isOpen={purchaseModalOpen}
+            onClose={() => {
+              setPurchaseModalOpen(false);
+              if (engineRef.current) {
+                engineRef.current.resume();
+                setIsPaused(false);
+              }
+            }}
+            boosterType={purchaseBoosterType}
+            onPurchase={handlePurchase}
+          />
         )}
 
         {/* Back Link at bottom (only in playing) */}

@@ -58,16 +58,21 @@ export interface Entity {
   // Specific properties for new entities
   startY?: number; // For sine wave or deviation reference
   animationOffset?: number; // Random seed for animations
+  fleeVelocityX?: number;
+  fleeVelocityY?: number;
+  kingSpeedBoostMs?: number;
 }
 
 export interface Hook {
   angle: number;
   length: number;
-  state: 'idle' | 'shooting' | 'retracting' | 'whirlpool' | 'snagged';
+  state: 'idle' | 'shooting' | 'retracting' | 'whirlpool' | 'snagged' | 'harpoon' | 'tnt' | 'net' | 'aiming' | 'tnt_aiming';
   direction: 1 | -1;
   x: number;
   y: number;
   caughtEntity: Entity | null;
+  targetX?: number; // Target for Harpoon/TNT
+  targetY?: number;
 }
 
 export interface GameState {
@@ -108,10 +113,16 @@ export interface GameState {
   curseTimerMs: number;     // Periodic counter for countdowns / bombs
   isPaused: boolean;        // Game pause state
   boosters: {
-    speed: boolean;  // 30% faster retraction
-    lucky: boolean;  // 20% more rare fish spawn
-    value: boolean;  // 20% more value for catches
+    speed: boolean;
+    lucky: boolean;
+    value: boolean;
+    harpoon: number;
+    net: number;
+    tnt: number;
+    anchor: number;
   };
+  activeBooster: 'harpoon' | 'net' | 'tnt' | 'anchor' | null;
+  anchorEffectTimerMs: number;
 }
 
 export const OBJECT_MATRIX: Record<FishClass, {

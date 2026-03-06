@@ -5,6 +5,7 @@ import { GameEffects } from "./GameEffects";
 export const CANVAS_WIDTH = 450;
 export const CANVAS_HEIGHT = 800;
 export const SEA_LEVEL_Y = CANVAS_HEIGHT * 0.25;
+export const FISH_ZONE_TOP = SEA_LEVEL_Y + 60; // Hull avoidance (User request 1)
 
 export const LEVEL_CONFIG: Record<number, {
   duration: number;
@@ -168,6 +169,7 @@ export class GameEngine {
   private onScoreUpdate: (score: number) => void;
   private onLevelComplete: (level: number) => void;
   private onFishCaught: (fish: Entity) => void;
+  private onBoosterUsed: (type: 'harpoon' | 'net' | 'tnt' | 'anchor') => void;
   private arrivalProgress: number = 0;
   private isArriving: boolean = false;
   private isSinking: boolean = false;
@@ -197,6 +199,7 @@ export class GameEngine {
       onScoreUpdate: (score: number) => void;
       onLevelComplete: (level: number) => void;
       onFishCaught: (fish: Entity) => void;
+      onBoosterUsed: (type: 'harpoon' | 'net' | 'tnt' | 'anchor') => void;
     }
   ) {
     this.ctx = ctx;
@@ -207,6 +210,7 @@ export class GameEngine {
     this.onScoreUpdate = callbacks.onScoreUpdate;
     this.onLevelComplete = callbacks.onLevelComplete;
     this.onFishCaught = callbacks.onFishCaught;
+    this.onBoosterUsed = callbacks.onBoosterUsed;
 
     this.spriteManager = new SpriteManager(() => {
       this.assetsLoaded = true;
@@ -293,18 +297,106 @@ export class GameEngine {
     return this.state;
   }
 
-  handleInput() {
+  /** Unified input handler for clicks/taps (kept for backwards compatibility on fast taps) */
+  public handleInput(cx: number = CANVAS_WIDTH / 2, cy: number = SEA_LEVEL_Y + 100) {
+    if (this.state.isPaused || this.state.hookBrokenMs > 0) return;
+
+    this.handlePointerDown(cx, cy);
+    this.handlePointerUp(cx, cy);
+  }
+
+  public handlePointerDown(cx: number, cy: number) {
+    if (this.state.isPaused || this.state.hookBrokenMs > 0) return;
+
+    // 1. Check for anchor snag
     if (this.state.anchorSnagMs > 0 && this.lastSnagType === 'anchor') {
       this.state.anchorSnagMs = 500;
       return;
     }
-    if (this.state.hookBrokenMs > 0) return;
-    if (this.state.hookAttempts <= 0) return;
-    if (this.state.hook.state === 'idle' && !this.isArriving) {
-      this.state.hook.state = 'shooting';
-      this.hookLaunchMs = 250; // launch animation triggered (mechanical.md — burst)
+
+    const booster = this.state.activeBooster;
+    const isIdle = this.state.hook.state === 'idle';
+
+    if (booster === 'harpoon' && isIdle) {
+      this.state.hook.state = 'aiming';
+      this.handlePointerMove(cx, cy);
+      return;
+    }
+
+    if (booster === 'tnt' && isIdle) {
+      this.state.hook.state = 'tnt_aiming';
+      this.state.hook.targetX = Math.max(0, Math.min(CANVAS_WIDTH, cx));
+      this.state.hook.targetY = Math.max(SEA_LEVEL_Y, Math.min(CANVAS_HEIGHT, cy));
+      return;
+    }
+
+    // 2. Handle non-aiming Boosters on tap
+    if (booster && isIdle) {
+      if (booster === 'anchor') {
+        this.state.anchorEffectTimerMs = 10000;
+        this.onBoosterUsed('anchor');
+        this.effects.spawnSplash(CANVAS_WIDTH / 2, SEA_LEVEL_Y);
+        return;
+      }
+
+      if (booster === 'net') {
+        this.state.hook.state = booster;
+        this.state.hook.targetX = cx;
+        this.state.hook.targetY = cy;
+        const dx = cx - CANVAS_WIDTH / 2;
+        const dy = cy - SEA_LEVEL_Y;
+        this.state.hook.angle = Math.atan2(dy, -dx);
+        this.onBoosterUsed(booster);
+        return;
+      }
     }
   }
+
+  public handlePointerMove(cx: number, cy: number) {
+    if (this.state.isPaused || this.state.hookBrokenMs > 0) return;
+
+    if (this.state.hook.state === 'aiming') {
+      const dx = cx - CANVAS_WIDTH / 2;
+      const dy = cy - SEA_LEVEL_Y;
+
+      // Clamp angle downwards (between 0 and PI)
+      let angle = Math.atan2(dy, -dx);
+      if (angle < 0) {
+        // If pointing up-right, clamp to 0 (right)
+        // If pointing up-left, clamp to PI (left)
+        angle = dx > 0 ? 0 : Math.PI;
+      }
+      this.state.hook.angle = angle;
+    } else if (this.state.hook.state === 'tnt_aiming') {
+      this.state.hook.targetX = Math.max(0, Math.min(CANVAS_WIDTH, cx));
+      this.state.hook.targetY = Math.max(SEA_LEVEL_Y, Math.min(CANVAS_HEIGHT, cy));
+    }
+  }
+
+  public handlePointerUp(cx: number, cy: number) {
+    if (this.state.isPaused || this.state.hookBrokenMs > 0) return;
+
+    if (this.state.hook.state === 'aiming') {
+      this.state.hook.state = 'harpoon';
+      this.state.hook.targetX = cx;
+      this.state.hook.targetY = cy;
+      this.onBoosterUsed('harpoon');
+      return;
+    } else if (this.state.hook.state === 'tnt_aiming' && this.state.hook.targetX !== undefined && this.state.hook.targetY !== undefined) {
+      this.handleTntExplosion(this.state.hook.targetX, this.state.hook.targetY);
+      this.state.hook.state = 'idle';
+      this.onBoosterUsed('tnt');
+      return;
+    }
+
+    const isIdle = this.state.hook.state === 'idle';
+    // Normal Hook Launch on tap
+    if (isIdle && this.state.hookAttempts > 0 && !this.isArriving && !this.state.activeBooster) {
+      this.state.hook.state = 'shooting';
+      this.hookLaunchMs = 250;
+    }
+  }
+
 
   private loop = (timestamp: number = 0) => {
     if (!this.state.isPlaying) return;
@@ -365,7 +457,9 @@ export class GameEngine {
     }
 
     if (this.state.timeRemaining > 0) {
-      this.state.timeRemaining -= deltaTime / 1000;
+      if (this.state.anchorEffectTimerMs <= 0) {
+        this.state.timeRemaining -= deltaTime / 1000;
+      }
     } else if (!this.isArriving) {
       this.isArriving = true;
       this.state.hook.state = 'idle';
@@ -392,6 +486,7 @@ export class GameEngine {
     this.state.zapShockMs = clamp(this.state.zapShockMs);
     this.state.moonSlowMs = clamp(this.state.moonSlowMs);
     this.state.lavaBurnMs = clamp(this.state.lavaBurnMs);
+    this.state.anchorEffectTimerMs = clamp(this.state.anchorEffectTimerMs);
 
     // Lava burn: add +1 weight per second while active
     if (this.state.lavaBurnMs > 0) {
@@ -614,6 +709,14 @@ export class GameEngine {
       hook.x = pivotX - Math.cos(hook.angle) * idleLength;
       hook.y = pivotY + Math.sin(hook.angle) * idleLength;
       hook.length = 0;
+    } else if (hook.state === 'aiming') {
+      const pivotX = CANVAS_WIDTH / 2;
+      const pivotY = SEA_LEVEL_Y;
+      const aimLength = 120;
+
+      hook.x = pivotX - Math.cos(hook.angle) * aimLength;
+      hook.y = pivotY + Math.sin(hook.angle) * aimLength;
+      hook.length = 0;
     } else if (hook.state === 'retracting' || hook.state === 'snagged' || hook.state === 'whirlpool') {
       if (hook.state === 'retracting') {
         let vBase = baseSpeed * 1.5;
@@ -715,9 +818,13 @@ export class GameEngine {
           this.triggerHookBreak();
         }
       }
-    } else if (hook.state === 'shooting') {
-      hook.length += baseSpeed * 1.5 * deltaTime;
-      // Yeni koordinat sistemi: x = center - cos * length
+    } else if (hook.state === 'shooting' || hook.state === 'harpoon') {
+      const speedMult = hook.state === 'harpoon' ? 4.0 : 1.5;
+      hook.length += baseSpeed * speedMult * deltaTime;
+
+      // Harpoon uses fixed angle (set in handleCoordinateInput)
+      // Normal shooting uses oscillating angle (handled by engine state)
+
       hook.x = CANVAS_WIDTH / 2 - Math.cos(hook.angle) * hook.length;
       hook.y = SEA_LEVEL_Y + Math.sin(hook.angle) * hook.length;
 
@@ -756,6 +863,7 @@ export class GameEngine {
             const curse = this.state.activeCurse;
             const damage = (curse === 'cift_hasar' || curse === 'kombine_2' || curse === 'final_1') ? -2 : -1;
             this.updateHookAttempts(damage);
+            this.triggerHookBreak();
           }
           break;
         }
@@ -813,6 +921,7 @@ export class GameEngine {
           hook.caughtEntity = null;
           this.addScore(-10);
           this.updateHookAttempts(-1);
+          this.triggerHookBreak();
           this.state.fishPanicMs = 5000;
           break;
         }
@@ -833,124 +942,109 @@ export class GameEngine {
         break;
       }
     }
-    else if (hook.state === 'whirlpool' && this.whirlpoolCenter) {
-      const center = this.whirlpoolCenter;
-      this.whirlpoolAngle += 0.02 * deltaTime;
-      if (this.whirlpoolAngle >= Math.PI * 2) {
-        this.whirlpoolAngle -= Math.PI * 2;
-        this.whirlpoolTurns += 1;
-      }
+    else if (hook.state === 'net') {
+      const dx = (hook.targetX || 0) - hook.x;
+      const dy = (hook.targetY || 0) - hook.y;
+      const dist = Math.hypot(dx, dy);
 
-      hook.x = center.x + Math.cos(this.whirlpoolAngle) * this.whirlpoolRadius;
-      hook.y = center.y + Math.sin(this.whirlpoolAngle) * this.whirlpoolRadius;
-
-      if (this.whirlpoolTurns >= 3) {
-        const outcome = Math.random();
-        if (outcome < 0.4) {
-          const angle = Math.atan2(hook.y - SEA_LEVEL_Y, hook.x - CANVAS_WIDTH / 2);
-          hook.angle = angle;
-          hook.length = Math.hypot(hook.x - CANVAS_WIDTH / 2, hook.y - SEA_LEVEL_Y);
-          hook.state = 'shooting';
-        } else if (outcome < 0.75) {
-          const angle = Math.atan2(SEA_LEVEL_Y - SEA_LEVEL_Y, hook.x - CANVAS_WIDTH / 2);
-          hook.angle = angle;
-          hook.length = Math.hypot(hook.x - CANVAS_WIDTH / 2, SEA_LEVEL_Y - SEA_LEVEL_Y);
-          hook.y = SEA_LEVEL_Y;
-          hook.state = 'retracting';
-          this.state.timeRemaining = Math.max(0, this.state.timeRemaining - 3);
-        } else {
-          hook.state = 'idle';
-          hook.length = 0;
-          hook.x = CANVAS_WIDTH / 2;
-          hook.y = SEA_LEVEL_Y;
-        }
-        this.whirlpoolCenter = null;
-      }
-    }
-    else if (hook.state === 'snagged') {
-      if (hook.caughtEntity) {
-        hook.x = hook.caughtEntity.x;
-        hook.y = hook.caughtEntity.y;
-
-        // Break hook if entity goes off-screen or is removed
-        if (hook.x < -hook.caughtEntity.radius || !this.state.fishes.includes(hook.caughtEntity)) {
-          this.triggerHookBreak();
-        }
+      if (dist < 15) {
+        this.handleNetCollection();
+        hook.state = 'retracting';
       } else {
-        this.triggerHookBreak();
-      }
-    }
-    else if (hook.state === 'retracting') {
-      let vBase = baseSpeed * 1.5;
-      if (this.state.anchorSnagMs > 0 && this.lastSnagType === 'anchor') {
-        vBase *= 0.3;
-      }
-      // Speed Booster: 30% faster retraction
-      if (this.state.boosters?.speed) {
-        vBase *= 1.3;
-      }
-      let weightMult = hook.caughtEntity ? hook.caughtEntity.weight : 1.0;
-
-      // Upgrade application: Rod Level reduces weight penalty
-      const weightBonus = (this.state.upgrades.rodLevel - 1) * 0.2;
-      const weight = Math.max(1, weightMult - weightBonus);
-
-      let retractSpeed = (vBase / weight) * deltaTime;
-
-      hook.length -= retractSpeed;
-
-      if (hook.length <= 0) {
-        hook.length = 0;
-        hook.state = 'idle';
-
-        if (hook.caughtEntity) {
-          const caught = hook.caughtEntity;
-
-          // Zap shock: 50% chance caught fish escapes if shock is active
-          if (this.state.zapShockMs > 0 && caught.type !== 'sunken_boat' && caught.type !== 'treasure_chest' && caught.type !== 'shell') {
-            if (Math.random() < 0.5) {
-              // Fish escapes!
-              hook.caughtEntity = null;
-              return;
-            }
-          }
-
-          if (caught.type === 'sunken_boat') {
-            this.handleSunkenBoat(caught);
-            this.effects.spawnRareCatch(CANVAS_WIDTH / 2, SEA_LEVEL_Y, '#8B4513');
-          } else if (caught.type === 'treasure_chest') {
-            this.handleTreasureChest(caught);
-            this.effects.spawnMediumCatch(CANVAS_WIDTH / 2, SEA_LEVEL_Y, '#FFD700');
-          } else if (caught.type === 'shell') {
-            this.handleShell(caught);
-            this.effects.spawnSmallCatch(CANVAS_WIDTH / 2, SEA_LEVEL_Y, '#FFEFD5');
-          } else {
-            this.handleStandardCatch(caught);
-          }
-          // Tekne bob animasyonu (mechanical.md)
-          this.effects.triggerBoatBob();
-          hook.caughtEntity = null;
-        }
-      } else {
-        hook.x = CANVAS_WIDTH / 2 + Math.cos(hook.angle) * hook.length;
-        hook.y = SEA_LEVEL_Y + Math.sin(hook.angle) * hook.length;
+        const speedMult = 2.5;
+        const moveDist = baseSpeed * speedMult * deltaTime;
+        hook.x += (dx / dist) * Math.min(dist, moveDist);
+        hook.y += (dy / dist) * Math.min(dist, moveDist);
+        hook.length = Math.hypot(hook.x - CANVAS_WIDTH / 2, hook.y - SEA_LEVEL_Y);
+        hook.angle = Math.atan2(hook.y - SEA_LEVEL_Y, -(hook.x - CANVAS_WIDTH / 2));
       }
     }
   }
 
   private updateFishes(deltaTime: number) {
+    const isAnchorActive = this.state.anchorEffectTimerMs > 0;
     const levelSpeedBonus = (this.state.level - 1) * 0.1;
-    const travelSpeed = 2 + levelSpeedBonus;
+    const travelSpeed = isAnchorActive ? 0.2 : (2 + levelSpeedBonus); // Slow random-ish movement during anchor
     const panicMultiplier = this.state.fishPanicMs > 0 ? 2 : 1;
     const moonSlowMultiplier = this.state.moonSlowMs > 0 ? 0.6 : 1;
     const time = performance.now() * 0.002;
     const timeMs = performance.now();
     const weatherSpeedBonus = this.state.weather === 'stormy' ? 0.5 : 0;
     const weatherSpeedMultiplier = this.state.weather === 'rainy' ? 1.2 : 1;
-    const baseSpeed = (speed: number) => (speed + travelSpeed + weatherSpeedBonus) * weatherSpeedMultiplier * moonSlowMultiplier;
+    const baseSpeed = (f: Entity) => {
+      const kingBoost = (f.kingSpeedBoostMs && f.kingSpeedBoostMs > 0) ? 1.6 : 1.0;
+      return (f.speed + travelSpeed + weatherSpeedBonus) * weatherSpeedMultiplier * moonSlowMultiplier * (isAnchorActive ? 0.2 : 1) * kingBoost;
+    };
+
+    const isHookActive = this.state.hook.y > SEA_LEVEL_Y &&
+      this.state.hook.state !== 'idle' &&
+      this.state.hook.state !== 'retracting' &&
+      this.state.hook.state !== 'snagged' &&
+      this.state.hook.state !== 'whirlpool';
+
+    const FLEE_CONFIG: Record<string, { radius: number, power: number }> = {
+      bubble: { radius: 0, power: 0 },
+      sakura: { radius: 40, power: 0.4 },
+      zap: { radius: 0, power: 0 },
+      candy: { radius: 55, power: 0.6 },
+      moon: { radius: 70, power: 0.8 },
+      lava: { radius: 65, power: 1.0 },
+      tide: { radius: 0, power: 0 },
+      leaf: { radius: 80, power: 0.7 },
+      crystal: { radius: 90, power: 1.2 },
+      galaxy: { radius: 100, power: 0 },
+      mushroom: { radius: 85, power: 1.1 },
+      king: { radius: 110, power: 0 },
+    };
 
     for (let i = this.state.fishes.length - 1; i >= 0; i--) {
       const fish = this.state.fishes[i];
+      const prevX = fish.x;
+
+      if (fish.kingSpeedBoostMs && fish.kingSpeedBoostMs > 0) {
+        fish.kingSpeedBoostMs -= deltaTime;
+      }
+
+      // Flee Logic
+      if (fish.fleeVelocityX === undefined) fish.fleeVelocityX = 0;
+      if (fish.fleeVelocityY === undefined) fish.fleeVelocityY = 0;
+
+      fish.fleeVelocityX *= 0.85;
+      fish.fleeVelocityY *= 0.85;
+
+      if (!isHookActive) {
+        fish.fleeVelocityX = 0;
+        fish.fleeVelocityY = 0;
+      } else {
+        const config = FLEE_CONFIG[fish.type] || { radius: 0, power: 0 };
+        const distToHook = Math.hypot(this.state.hook.x - fish.x, this.state.hook.y - fish.y);
+
+        if (distToHook < config.radius) {
+          if (fish.type === 'galaxy') {
+            const cycle = 1200 + ((fish.animationOffset || 0) % 800);
+            const currentPhase = (timeMs + (fish.animationOffset || 0) * 1000) % cycle;
+            if (currentPhase < 100) {
+              fish.animationOffset = (fish.animationOffset || 0) + (101 - currentPhase) / 1000;
+            }
+          } else if (fish.type === 'mushroom') {
+            const cycle = 1000;
+            const currentPhase = (timeMs + (fish.animationOffset || 0) * 1000) % cycle;
+            if (currentPhase < 800) {
+              fish.animationOffset = (fish.animationOffset || 0) + (801 - currentPhase) / 1000;
+            }
+          } else if (fish.type === 'king') {
+            fish.kingSpeedBoostMs = 2000;
+          }
+
+          if (config.power > 0) {
+            const strength = (1 - distToHook / config.radius) * config.power;
+            const dirX = (fish.x - this.state.hook.x) / distToHook; // away from hook
+            const dirY = (fish.y - this.state.hook.y) / distToHook;
+            fish.fleeVelocityX += dirX * strength;
+            fish.fleeVelocityY += dirY * strength;
+          }
+        }
+      }
 
       // Trail güncellemesi (hızlı balıklar için)
       if (fish.type === 'zap' || fish.type === 'tide' || fish.type === 'king') {
@@ -990,7 +1084,7 @@ export class GameEngine {
         const pausePhase = (timeMs + (fish.animationOffset || 0) * 500) % pauseCycle;
         const isPaused = pausePhase > (pauseCycle - 500); // last 0.5s of cycle = pause
         if (!isPaused) {
-          fish.x -= baseSpeed(fish.speed) * (deltaTime / 16) * panicMultiplier;
+          fish.x -= baseSpeed(fish) * (deltaTime / 16) * panicMultiplier;
         }
         const waveY = Math.sin(fish.x * 0.04) * 20;
         fish.y = (fish.startY || fish.y) + waveY;
@@ -1000,7 +1094,7 @@ export class GameEngine {
         const zigzagPhase = (timeMs + (fish.animationOffset || 0) * 1000) % zigzagCycle;
         const zigzagSeed = Math.floor((timeMs + (fish.animationOffset || 0) * 1000) / zigzagCycle);
         const zigzagDir = Math.sin(zigzagSeed * 7.13 + (fish.animationOffset || 0)) < 0 ? -1 : 1;
-        fish.x -= baseSpeed(fish.speed) * (deltaTime / 16) * panicMultiplier;
+        fish.x -= baseSpeed(fish) * (deltaTime / 16) * panicMultiplier;
         // Oscillate around startY — no drift
         const zigzagOffset = zigzagPhase < 150
           ? zigzagDir * 30 * (zigzagPhase / 150)
@@ -1011,7 +1105,7 @@ export class GameEngine {
         const moonPeriod = 6;
         const sineProgress = Math.sin(time / (moonPeriod / 2) + (fish.animationOffset || 0));
         const effectiveSine = Math.abs(sineProgress) > 0.95 ? Math.sign(sineProgress) : sineProgress;
-        fish.x -= baseSpeed(fish.speed) * (deltaTime / 16) * panicMultiplier;
+        fish.x -= baseSpeed(fish) * (deltaTime / 16) * panicMultiplier;
         fish.y = (fish.startY || fish.y) + effectiveSine * 40;
       } else if (fish.type === 'lava') {
         // Lava: diagonal bounce ±60px around startY
@@ -1019,28 +1113,28 @@ export class GameEngine {
         const bouncePhase = (timeMs + (fish.animationOffset || 0) * 1000) % bouncePeriod;
         const bounceProgress = bouncePhase / bouncePeriod;
         const triangleWave = bounceProgress < 0.5 ? bounceProgress * 2 - 0.5 : 1.5 - bounceProgress * 2;
-        fish.x -= baseSpeed(fish.speed) * (deltaTime / 16) * panicMultiplier;
+        fish.x -= baseSpeed(fish) * (deltaTime / 16) * panicMultiplier;
         fish.y = (fish.startY || fish.y) + triangleWave * 60;
       } else if (fish.type === 'tide') {
         // Tide: wide sine ±45px, 2.5s period, very fast
         const tideWave = Math.sin(time * (Math.PI * 2 / 2.5) + (fish.animationOffset || 0)) * 45;
-        fish.x -= baseSpeed(fish.speed) * (deltaTime / 16) * panicMultiplier;
+        fish.x -= baseSpeed(fish) * (deltaTime / 16) * panicMultiplier;
         fish.y = (fish.startY || fish.y) + tideWave;
       } else if (fish.type === 'candy') {
         const spiral = time * 1.4 + (fish.animationOffset || 0);
-        fish.x -= baseSpeed(fish.speed) * (deltaTime / 16) * panicMultiplier;
+        fish.x -= baseSpeed(fish) * (deltaTime / 16) * panicMultiplier;
         fish.x += Math.cos(spiral) * 1.5;
         fish.y = (fish.startY || fish.y) + Math.sin(spiral) * 20;
       } else if (fish.type === 'sakura') {
-        fish.x -= baseSpeed(fish.speed) * (deltaTime / 16) * panicMultiplier;
+        fish.x -= baseSpeed(fish) * (deltaTime / 16) * panicMultiplier;
         const deviation = Math.sin(time + (fish.animationOffset || 0)) * 15;
         fish.y = (fish.startY || fish.y) + deviation;
       } else if (fish.type === 'leaf') {
-        fish.x -= baseSpeed(fish.speed) * (deltaTime / 16) * panicMultiplier;
+        fish.x -= baseSpeed(fish) * (deltaTime / 16) * panicMultiplier;
         const drift = Math.sin(time + (fish.animationOffset || 0)) * 18;
         fish.y = (fish.startY || fish.y) + drift;
       } else if (fish.type === 'crystal') {
-        fish.x -= baseSpeed(fish.speed) * (deltaTime / 16) * panicMultiplier;
+        fish.x -= baseSpeed(fish) * (deltaTime / 16) * panicMultiplier;
         const slalom = Math.sin(time * 2 + (fish.animationOffset || 0)) * 35;
         fish.y = (fish.startY || fish.y) + slalom;
       } else if (fish.type === 'galaxy') {
@@ -1049,7 +1143,7 @@ export class GameEngine {
         const jumpSeed = Math.floor((timeMs + (fish.animationOffset || 0) * 1000) / cycle);
         const jumpDir = Math.sin(jumpSeed * 12.9898 + (fish.animationOffset || 0)) < 0 ? -1 : 1;
         const jumpOffset = (0.3 + Math.sin(jumpSeed * 9.1 + (fish.animationOffset || 0)) * 0.3) * 50;
-        fish.x -= baseSpeed(fish.speed) * (deltaTime / 16) * panicMultiplier;
+        fish.x -= baseSpeed(fish) * (deltaTime / 16) * panicMultiplier;
         fish.y = (fish.startY || fish.y) + jumpDir * jumpOffset;
         if (phase < 100) {
           fish.y = fish.startY || fish.y;
@@ -1059,7 +1153,7 @@ export class GameEngine {
         const phase = (timeMs + (fish.animationOffset || 0) * 1000) % cycle;
         const jumpSeed = Math.floor((timeMs + (fish.animationOffset || 0) * 1000) / cycle);
         const jumpDir = Math.sin(jumpSeed * 8.37 + (fish.animationOffset || 0)) < 0 ? -1 : 1;
-        fish.x -= baseSpeed(fish.speed) * (deltaTime / 16) * panicMultiplier;
+        fish.x -= baseSpeed(fish) * (deltaTime / 16) * panicMultiplier;
         if (phase < 800) {
           fish.y = (fish.startY || fish.y);
         } else {
@@ -1067,37 +1161,64 @@ export class GameEngine {
           fish.y = (fish.startY || fish.y) + jumpDir * 25 * Math.sin(progress * Math.PI);
         }
       } else if (fish.type === 'king') {
-        fish.x -= baseSpeed(fish.speed) * (deltaTime / 16) * panicMultiplier;
+        fish.x -= baseSpeed(fish) * (deltaTime / 16) * panicMultiplier;
         fish.y = (fish.startY || fish.y) + Math.sin(time + (fish.animationOffset || 0)) * 5;
         if (fish.x < CANVAS_WIDTH && fish.x > 0 && this.state.fishPanicMs < 500) {
           this.state.fishPanicMs = 3000;
         }
       } else if (fish.type === 'shark_skeleton') {
-        fish.x -= (baseSpeed(fish.speed) * 0.4) * (deltaTime / 16);
+        fish.x -= (baseSpeed(fish) * 0.4) * (deltaTime / 16);
         fish.y = (fish.startY || fish.y) + Math.sin(time + (fish.animationOffset || 0)) * 8;
       } else if (fish.type === 'whirlpool') {
-        fish.x -= (baseSpeed(fish.speed) * 0.4) * (deltaTime / 16);
+        fish.x -= (baseSpeed(fish) * 0.4) * (deltaTime / 16);
         fish.y = (fish.startY || fish.y) + Math.sin(time + (fish.animationOffset || 0)) * 10;
       } else if (fish.type === 'anchor') {
         // Anchor: pendulum sway ±15px, 4s period
         const pendulum = Math.sin(time * (Math.PI * 2 / 4) + (fish.animationOffset || 0)) * 15;
         fish.x = (fish.startY !== undefined ? fish.x : fish.x) + pendulum * (deltaTime / 500);
       } else if (fish.type === 'sea_kelp') {
-        fish.x -= baseSpeed(fish.speed) * (deltaTime / 16);
+        fish.x -= baseSpeed(fish) * (deltaTime / 16);
         fish.y = (fish.startY || fish.y) + Math.sin(time + (fish.animationOffset || 0)) * 3;
       } else if (fish.type === 'coral') {
-        fish.x -= baseSpeed(fish.speed) * (deltaTime / 16);
+        fish.x -= baseSpeed(fish) * (deltaTime / 16);
       } else {
-        fish.x -= baseSpeed(fish.speed) * (deltaTime / 16) * panicMultiplier;
+        fish.x -= baseSpeed(fish) * (deltaTime / 16) * panicMultiplier;
       }
 
       // Global Y-clamp: keep all fish within water bounds (never above sea level or below sand)
       const isStaticElement = fish.type === 'sea_kelp' || fish.type === 'sea_rock' || fish.type === 'coral' ||
         fish.type === 'anchor' || fish.type === 'shell' || fish.type === 'treasure_chest' || fish.type === 'sunken_boat';
+
+      // Anchor direction override
+      if (isAnchorActive && !isStaticElement && fish.type !== 'env_bubbles') {
+        const dx = fish.x - prevX;
+        fish.x = prevX;
+        let effDir = fish.direction;
+        if (Math.floor(fish.id * 1000) % 10 < 3) { // 30% chance to go right
+          effDir = 1;
+        }
+        fish.x += effDir * Math.abs(dx);
+      }
+
       if (!isStaticElement && fish.type !== 'env_bubbles') {
         const minY = SEA_LEVEL_Y + 15; // at least 15px below water surface
         const maxY = CANVAS_HEIGHT - 80; // above the sand
+
+        // Add Evasion Velocity
+        if (Math.abs(fish.fleeVelocityX!) > 0.01) {
+          fish.x += fish.fleeVelocityX!;
+        }
+        if (Math.abs(fish.fleeVelocityY!) > 0.01) {
+          fish.y += fish.fleeVelocityY!;
+          // Adjust startY so waves/bounces continue from the newly evaded height
+          fish.startY = (fish.startY || fish.y) + fish.fleeVelocityY!;
+        }
+
+        // Hard clamp limits (only Y axis to allow natural despawn)
         fish.y = Math.max(minY, Math.min(maxY, fish.y));
+        if (fish.startY) {
+          fish.startY = Math.max(minY, Math.min(maxY, fish.startY));
+        }
       }
 
       if (this.state.fishPanicMs > 0 && fish.value < 100 && fish.type !== 'env_bubbles') {
@@ -1105,6 +1226,35 @@ export class GameEngine {
       }
 
       if (fish.x < -120) {
+        this.state.fishes.splice(i, 1);
+      }
+    }
+  }
+
+  private handleTntExplosion(tx: number, ty: number) {
+    this.effects.spawnExplosion(tx, ty); // Need to add this to GameEffects
+    this.effects.shakeScreen(15, 10);
+
+    const explosionRadius = 120; // 3x3 grid size representation and hit area
+
+    // Collect all fish in radius
+    for (let i = this.state.fishes.length - 1; i >= 0; i--) {
+      const fish = this.state.fishes[i];
+      const dist = Math.hypot(fish.x - tx, fish.y - ty);
+      if (dist < explosionRadius && !OBJECT_MATRIX[fish.type].isObstacle) {
+        this.handleStandardCatch(fish);
+        this.state.fishes.splice(i, 1);
+      }
+    }
+  }
+
+  private handleNetCollection() {
+    this.effects.shakeScreen(5, 5);
+    // Collect ALL fish on screen
+    for (let i = this.state.fishes.length - 1; i >= 0; i--) {
+      const fish = this.state.fishes[i];
+      if (!OBJECT_MATRIX[fish.type].isObstacle) {
+        this.handleStandardCatch(fish);
         this.state.fishes.splice(i, 1);
       }
     }
@@ -1219,38 +1369,38 @@ export class GameEngine {
       const speed = 1.0 * assetConfig.speedMultiplier;
 
       // Spawn Y position logic — depth zones from spec
-      const waterDepth = CANVAS_HEIGHT - SEA_LEVEL_Y - 60; // total water column (above sand)
+      const waterDepth = CANVAS_HEIGHT - FISH_ZONE_TOP - 60; // total water column (above sand)
       let y;
       if (fishClass === 'coral' || fishClass === 'sunken_boat' || fishClass === 'anchor' || fishClass === 'treasure_chest' || fishClass === 'shell' || fishClass === 'sea_kelp') {
         y = CANVAS_HEIGHT - 60 + (Math.random() * 20);
       } else if (fishClass === 'sea_rock') {
-        y = Math.random() < 0.5 ? CANVAS_HEIGHT - 70 + Math.random() * 10 : SEA_LEVEL_Y + 100 + Math.random() * 200;
+        y = Math.random() < 0.5 ? CANVAS_HEIGHT - 70 + Math.random() * 10 : FISH_ZONE_TOP + 100 + Math.random() * 200;
       } else if (fishClass === 'whirlpool') {
-        y = SEA_LEVEL_Y + waterDepth * 0.2 + Math.random() * waterDepth * 0.4; // orta zon
+        y = FISH_ZONE_TOP + waterDepth * 0.2 + Math.random() * waterDepth * 0.4; // orta zon
       } else if (fishClass === 'bubble') {
-        y = SEA_LEVEL_Y + Math.random() * waterDepth * 0.25; // 0-25%
+        y = FISH_ZONE_TOP + Math.random() * waterDepth * 0.25; // 0-25%
       } else if (fishClass === 'sakura') {
-        y = SEA_LEVEL_Y + Math.random() * waterDepth * 0.4; // 0-40%
+        y = FISH_ZONE_TOP + Math.random() * waterDepth * 0.4; // 0-40%
       } else if (fishClass === 'zap') {
-        y = SEA_LEVEL_Y + Math.random() * waterDepth * 0.9; // 0-90%
+        y = FISH_ZONE_TOP + Math.random() * waterDepth * 0.9; // 0-90%
       } else if (fishClass === 'candy') {
-        y = SEA_LEVEL_Y + waterDepth * 0.2 + Math.random() * waterDepth * 0.4; // 20-60%
+        y = FISH_ZONE_TOP + waterDepth * 0.2 + Math.random() * waterDepth * 0.4; // 20-60%
       } else if (fishClass === 'moon') {
-        y = SEA_LEVEL_Y + waterDepth * 0.4 + Math.random() * waterDepth * 0.4; // 40-80%
+        y = FISH_ZONE_TOP + waterDepth * 0.4 + Math.random() * waterDepth * 0.4; // 40-80%
       } else if (fishClass === 'lava') {
-        y = SEA_LEVEL_Y + waterDepth * 0.6 + Math.random() * waterDepth * 0.35; // 60-95%
+        y = FISH_ZONE_TOP + waterDepth * 0.6 + Math.random() * waterDepth * 0.35; // 60-95%
       } else if (fishClass === 'crystal') {
-        y = SEA_LEVEL_Y + waterDepth * 0.55 + Math.random() * waterDepth * 0.35; // 55-90%
+        y = FISH_ZONE_TOP + waterDepth * 0.55 + Math.random() * waterDepth * 0.35; // 55-90%
       } else if (fishClass === 'tide') {
-        y = SEA_LEVEL_Y + Math.random() * waterDepth * 0.5; // 0-50%
+        y = FISH_ZONE_TOP + Math.random() * waterDepth * 0.5; // 0-50%
       } else if (fishClass === 'mushroom') {
-        y = SEA_LEVEL_Y + waterDepth * 0.35 + Math.random() * waterDepth * 0.5; // 35-85%
+        y = FISH_ZONE_TOP + waterDepth * 0.35 + Math.random() * waterDepth * 0.5; // 35-85%
       } else if (fishClass === 'king') {
-        y = SEA_LEVEL_Y + waterDepth * 0.3 + Math.random() * waterDepth * 0.4; // 30-70%
+        y = FISH_ZONE_TOP + waterDepth * 0.3 + Math.random() * waterDepth * 0.4; // 30-70%
       } else if (fishClass === 'leaf' || fishClass === 'galaxy') {
-        y = SEA_LEVEL_Y + Math.random() * waterDepth * 0.95; // 0-95%
+        y = FISH_ZONE_TOP + Math.random() * waterDepth * 0.95; // 0-95%
       } else {
-        y = SEA_LEVEL_Y + 50 + Math.random() * (CANVAS_HEIGHT - SEA_LEVEL_Y - 150);
+        y = FISH_ZONE_TOP + 50 + Math.random() * (CANVAS_HEIGHT - FISH_ZONE_TOP - 150);
       }
       let finalSpeed = speed;
       let finalWeight = assetConfig.weightMultiplier;
@@ -1339,9 +1489,7 @@ export class GameEngine {
   private updateHookAttempts(delta: number) {
     const next = Math.max(0, Math.min(this.state.maxHookAttempts, this.state.hookAttempts + delta));
     this.state.hookAttempts = next;
-    if (delta < 0) {
-      this.triggerHookBreak();
-    }
+
     if (next === 0 && !this.isArriving && !this.isSinking) {
       this.state.isPlaying = false;
       this.onGameOver(this.state.score, this.state.level, "Fishing rod unusable! All hooks are broken.");
@@ -1601,7 +1749,6 @@ export class GameEngine {
       this.addScore(-10);
     }
 
-    this.updateHookAttempts(-1);
     if (!this.isSinking) {
       this.onFishCaught(caught);
     }
@@ -1623,7 +1770,6 @@ export class GameEngine {
       });
     }
 
-    this.updateHookAttempts(-1);
     if (!this.isSinking) {
       this.onFishCaught(caught);
     }
@@ -1848,7 +1994,7 @@ export class GameEngine {
     this.drawFisherman();
     this.drawFishingRod();
 
-    // 5. Draw Hook Line
+    // Draw Hook Line
     const rod = this.getRodStats();
     const rodTip = this.getRodTipPosition();
     const tipX = rodTip.x + rodTweak.dx;
@@ -1857,7 +2003,74 @@ export class GameEngine {
     const pivotX = CANVAS_WIDTH / 2;
     const pivotY = SEA_LEVEL_Y;
 
-    if (this.state.hookBrokenMs > 0) {
+    if (this.state.hook.state === 'tnt_aiming' && this.state.hook.targetX !== undefined && this.state.hook.targetY !== undefined) {
+      // Draw 3x3 Red Grid
+      const gridSize = 240; // 120 radius Explosion area = 240px width/height
+      const cellSize = gridSize / 3;
+      const tntX = this.state.hook.targetX - gridSize / 2;
+      const tntY = this.state.hook.targetY - gridSize / 2;
+
+      this.ctx.fillStyle = 'rgba(255, 50, 50, 0.2)';
+      this.ctx.fillRect(tntX, tntY, gridSize, gridSize);
+
+      this.ctx.strokeStyle = 'rgba(255, 50, 50, 0.5)';
+      this.ctx.lineWidth = 2;
+
+      this.ctx.beginPath();
+      // Verticals
+      this.ctx.moveTo(tntX + cellSize, tntY);
+      this.ctx.lineTo(tntX + cellSize, tntY + gridSize);
+      this.ctx.moveTo(tntX + cellSize * 2, tntY);
+      this.ctx.lineTo(tntX + cellSize * 2, tntY + gridSize);
+
+      // Horizontals
+      this.ctx.moveTo(tntX, tntY + cellSize);
+      this.ctx.lineTo(tntX + gridSize, tntY + cellSize);
+      this.ctx.moveTo(tntX, tntY + cellSize * 2);
+      this.ctx.lineTo(tntX + gridSize, tntY + cellSize * 2);
+
+      // Outer Border
+      this.ctx.rect(tntX, tntY, gridSize, gridSize);
+      this.ctx.stroke();
+
+      // TNT Icon in center
+      const iconSize = 40;
+      this.ctx.fillStyle = '#444'; // simple bomb icon
+      this.ctx.beginPath();
+      this.ctx.arc(this.state.hook.targetX, this.state.hook.targetY, iconSize / 2, 0, Math.PI * 2);
+      this.ctx.fill();
+      this.ctx.fillStyle = '#FF5555';
+      this.ctx.fillRect(this.state.hook.targetX - 4, this.state.hook.targetY - iconSize / 2 - 8, 8, 8);
+    }
+
+    if (this.state.hook.state === 'aiming') {
+      // Semi-transparent aiming semicircle
+      this.ctx.fillStyle = 'rgba(65, 105, 225, 0.15)';
+      this.ctx.beginPath();
+      this.ctx.arc(pivotX, pivotY, 150, 0, Math.PI);
+      this.ctx.fill();
+
+      // Harpoon arrow
+      const aimLength = 120;
+      const arrX = pivotX - Math.cos(this.state.hook.angle) * aimLength;
+      const arrY = pivotY + Math.sin(this.state.hook.angle) * aimLength;
+
+      this.ctx.strokeStyle = '#4169E1';
+      this.ctx.lineWidth = 6;
+      this.ctx.beginPath();
+      this.ctx.moveTo(pivotX, pivotY);
+      this.ctx.lineTo(arrX, arrY);
+      this.ctx.stroke();
+
+      // Arrow head
+      this.ctx.beginPath();
+      this.ctx.moveTo(arrX, arrY);
+      this.ctx.lineTo(arrX + Math.cos(this.state.hook.angle - 0.15) * 20, arrY - Math.sin(this.state.hook.angle - 0.15) * 20);
+      this.ctx.lineTo(arrX + Math.cos(this.state.hook.angle + 0.15) * 20, arrY - Math.sin(this.state.hook.angle + 0.15) * 20);
+      this.ctx.closePath();
+      this.ctx.fillStyle = '#4169E1';
+      this.ctx.fill();
+    } else if (this.state.hookBrokenMs > 0) {
       const midX = tipX + Math.cos(this.state.hook.angle) * 30;
       const midY = tipY + Math.sin(this.state.hook.angle) * 30;
       this.ctx.strokeStyle = '#D64545';
@@ -1866,9 +2079,12 @@ export class GameEngine {
       this.ctx.moveTo(tipX, tipY);
       this.ctx.lineTo(midX, midY);
       this.ctx.stroke();
-    } else {
-      this.ctx.strokeStyle = '#D64545';
-      this.ctx.lineWidth = rod.lineWidth;
+    } else if (this.state.hook.state !== 'tnt_aiming') {
+      const isHarpoon = this.state.hook.state === 'harpoon';
+      const isNet = this.state.hook.state === 'net';
+
+      this.ctx.strokeStyle = isHarpoon ? '#888' : (isNet ? '#fff' : '#D64545');
+      this.ctx.lineWidth = isHarpoon ? 5 : (isNet ? 2 : rod.lineWidth);
 
       this.ctx.beginPath();
       this.ctx.moveTo(tipX, tipY);
@@ -1878,10 +2094,10 @@ export class GameEngine {
       this.ctx.lineTo(this.state.hook.x, this.state.hook.y);
       this.ctx.stroke();
 
-      this.drawHookHead(this.state.hook.x, this.state.hook.y, Math.max(1.5, rod.lineWidth));
+      this.drawHookHead(this.state.hook.x, this.state.hook.y, Math.max(1.5, this.ctx.lineWidth));
     }
 
-    if (this.state.hook.caughtEntity) {
+    if (this.state.hook.caughtEntity && this.state.hook.state !== 'tnt_aiming') {
       const entity = this.state.hook.caughtEntity;
       if (entity.type === 'sunken_boat') {
         this.drawEntity(entity.x, entity.y, entity.radius, entity.color, entity.type, false, entity);
@@ -1889,6 +2105,52 @@ export class GameEngine {
         entity.x = this.state.hook.x;
         entity.y = this.state.hook.y + 15;
         this.drawEntity(entity.x, entity.y, entity.radius, entity.color, entity.type, true, entity);
+      }
+    }
+
+    // Active Booster Effects (Under water)
+    if (this.state.anchorEffectTimerMs > 0) {
+      const sprite = this.spriteManager.getImage('rusty_anchor');
+      if (sprite && sprite.complete && sprite.naturalWidth > 0) {
+        // Calculate Y position based on how long it's been falling
+        // Total time is 10000ms. Assume it falls in the first 1000ms
+        const elapsed = 10000 - this.state.anchorEffectTimerMs;
+        const startY = SEA_LEVEL_Y;
+        const targetY = CANVAS_HEIGHT - 60; // Seabed
+        let currentY = startY;
+
+        if (elapsed < 1000) {
+          // Drop easing
+          const t = elapsed / 1000;
+          currentY = startY + (targetY - startY) * (t * t); // Simple quadratic easing
+        } else {
+          currentY = targetY; // Rest on bottom
+        }
+
+        const width = 120;
+        const height = 120; // Maintain aspect ratio
+
+        // Draw rope to anchor
+        this.ctx.strokeStyle = '#5c2d0c';
+        this.ctx.lineWidth = 3;
+        this.ctx.beginPath();
+        this.ctx.moveTo(CANVAS_WIDTH / 2, SEA_LEVEL_Y);
+        this.ctx.lineTo(CANVAS_WIDTH / 2, currentY - height / 2 + 30);
+        this.ctx.stroke();
+
+        this.ctx.drawImage(sprite, CANVAS_WIDTH / 2 - width / 2, currentY - height + 30, width, height);
+
+        // Add a pulsing glow around it when resting
+        if (currentY === targetY) {
+          const glowAlpha = 0.3 + Math.sin(performance.now() * 0.005) * 0.2;
+          this.ctx.save();
+          this.ctx.globalCompositeOperation = 'lighter';
+          this.ctx.fillStyle = `rgba(0, 255, 100, ${glowAlpha})`;
+          this.ctx.beginPath();
+          this.ctx.ellipse(CANVAS_WIDTH / 2, currentY - height / 2, 40, 20, 0, 0, Math.PI * 2);
+          this.ctx.fill();
+          this.ctx.restore();
+        }
       }
     }
 
@@ -2100,6 +2362,82 @@ export class GameEngine {
   }
 
   private drawHookHead(x: number, y: number, lineWidth: number) {
+    const hookState = this.state.hook.state;
+
+    if (hookState === 'harpoon') {
+      // Draw Harpoon Tip
+      this.ctx.fillStyle = '#AAA';
+      this.ctx.strokeStyle = '#555';
+      this.ctx.lineWidth = 2;
+      this.ctx.beginPath();
+      this.ctx.moveTo(x, y - 15);
+      this.ctx.lineTo(x - 5, y);
+      this.ctx.lineTo(x + 5, y);
+      this.ctx.closePath();
+      this.ctx.fill();
+      this.ctx.stroke();
+
+      // Barbs
+      this.ctx.beginPath();
+      this.ctx.moveTo(x - 3, y - 8);
+      this.ctx.lineTo(x - 10, y - 5);
+      this.ctx.moveTo(x + 3, y - 8);
+      this.ctx.lineTo(x + 10, y - 5);
+      this.ctx.stroke();
+      return;
+    }
+
+    if (hookState === 'tnt') {
+      // Draw TNT Bomb
+      this.ctx.fillStyle = '#D32F2F';
+      this.ctx.strokeStyle = '#000';
+      this.ctx.lineWidth = 1;
+      this.ctx.beginPath();
+      this.ctx.arc(x, y, 12, 0, Math.PI * 2);
+      this.ctx.fill();
+      this.ctx.stroke();
+
+      // Fuse
+      this.ctx.strokeStyle = '#5D4037';
+      this.ctx.lineWidth = 2;
+      this.ctx.beginPath();
+      this.ctx.moveTo(x, y - 12);
+      this.ctx.quadraticCurveTo(x + 5, y - 18, x + 2, y - 22);
+      this.ctx.stroke();
+
+      // Spark
+      if (Math.random() > 0.3) {
+        this.ctx.fillStyle = '#FFEB3B';
+        this.ctx.beginPath();
+        this.ctx.arc(x + 2, y - 22, 3, 0, Math.PI * 2);
+        this.ctx.fill();
+      }
+      return;
+    }
+
+    if (hookState === 'net') {
+      const progress = Math.min(1, performance.now() % 1000 / 1000);
+      const radius = 30 * (1 - progress * 0.2); // Shrink effect? Or just a pulse
+
+      this.ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+      this.ctx.lineWidth = 2;
+      this.ctx.setLineDash([5, 5]);
+      this.ctx.beginPath();
+      this.ctx.arc(x, y, radius, 0, Math.PI * 2);
+      this.ctx.stroke();
+      this.ctx.setLineDash([]);
+
+      // Net mesh
+      this.ctx.beginPath();
+      for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * Math.PI * 2;
+        this.ctx.moveTo(x, y);
+        this.ctx.lineTo(x + Math.cos(angle) * radius, y + Math.sin(angle) * radius);
+      }
+      this.ctx.stroke();
+      return;
+    }
+
     this.ctx.strokeStyle = '#777';
     this.ctx.lineWidth = lineWidth;
     this.ctx.beginPath();
@@ -2245,7 +2583,7 @@ export class GameEngine {
         offsetX = -width / 2;
         offsetY = -height + 5; // Pivot bottom
       } else if (type === 'shell') {
-        height = 20;
+        height = 72; // Matched to bubble fish
         width = height * ratio;
         offsetX = -width / 2;
         offsetY = -height; // Pivot bottom

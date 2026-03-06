@@ -265,6 +265,15 @@ export class GameEffects {
         }
     }
 
+    /** TNT Patlaması */
+    spawnExplosion(tx: number, ty: number): void {
+        this.shakeScreen(15, 12);
+        this.flashOverlay('#FFD700', 0.6, 250);
+        this.spawnCircles(tx, ty, 12, '#FF4500', 15, 6, 800);
+        this.spawnCircles(tx, ty, 8, '#FFA500', 10, 4, 600);
+        this.spawnRing(tx, ty, 120, 500, 'rgba(255,165,0,0.4)');
+    }
+
     /** Kelp çarpması */
     spawnKelpHit(x: number, y: number): void {
         this.spawnCircles(x, y, 3, '#7ED957', 5, 2, 350);
