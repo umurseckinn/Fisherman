@@ -68,9 +68,9 @@ const ENTITY_DETAILS: Record<string, { description: string; effect?: string }> =
         description: "Hard obstacle found at various depths.",
         effect: "Causes hook to bounce back instantly."
     },
-    treasure_chest: {
-        description: "Sunk treasure containing lots of gold.",
-        effect: "High market value but heavy (8 units)."
+    gold_doubloon: {
+        description: "A shiny sunken coin. Floats randomly.",
+        effect: "Adds +10 kg weight but grants high level-scaled gold. Can sink the boat!"
     },
     whirlpool: {
         description: "Dangerous vortex that sucks everything in.",
@@ -112,7 +112,7 @@ export const InfoCard: React.FC<InfoCardProps> = ({ entityKey, onClose }) => {
                 {/* Image Area */}
                 <div className="w-40 h-40 bg-slate-50 rounded-full flex items-center justify-center mb-6 shadow-inner border-4 border-slate-100">
                     <img
-                        src={`/assets/${entityKey === 'coral' || entityKey === 'sea_kelp' || entityKey === 'sea_rock' || entityKey === 'treasure_chest' || entityKey === 'whirlpool' || entityKey === 'sunken_boat' || entityKey === 'shark_skeleton' || entityKey === 'anchor' || entityKey === 'shell' ? 'environment' : 'fish'}/${entityKey}${entityKey === 'env_bubbles' ? '.png' : (entityKey === 'coral' || entityKey === 'sea_kelp' || entityKey === 'sea_rock' || entityKey === 'treasure_chest' || entityKey === 'whirlpool' || entityKey === 'sunken_boat' || entityKey === 'shark_skeleton' || entityKey === 'anchor' || entityKey === 'shell' ? '.png' : '_fish.png')}`}
+                        src={`/assets/${entityKey === 'coral' || entityKey === 'sea_kelp' || entityKey === 'sea_rock' || entityKey === 'gold_doubloon' || entityKey === 'whirlpool' || entityKey === 'sunken_boat' || entityKey === 'shark_skeleton' || entityKey === 'anchor' || entityKey === 'shell' ? 'environment' : 'fish'}/${entityKey}${entityKey === 'env_bubbles' ? '.png' : (entityKey === 'coral' || entityKey === 'sea_kelp' || entityKey === 'sea_rock' || entityKey === 'gold_doubloon' || entityKey === 'whirlpool' || entityKey === 'sunken_boat' || entityKey === 'shark_skeleton' || entityKey === 'anchor' || entityKey === 'shell' ? '.png' : '_fish.png')}`}
                         alt={config.names[0]}
                         className="w-32 h-32 object-contain drop-shadow-lg"
                     />

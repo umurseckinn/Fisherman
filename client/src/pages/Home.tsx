@@ -1,11 +1,46 @@
-import { Play, Trophy, Anchor } from "lucide-react";
-import { useState } from "react";
+import { Play, Trophy, Anchor, Zap, ShoppingBag, Bomb, Store } from "lucide-react";
+import { useState, useEffect } from "react";
 import { InfoCard } from "../components/InfoCard";
 import { FishClass } from "../game/types";
 import { Link } from "wouter";
+import { BoosterPurchaseModal, BoosterType, PurchasePackage } from "../components/BoosterPurchaseModal";
 
 export default function Home() {
   const [selectedEntity, setSelectedEntity] = useState<FishClass | null>(null);
+  const [purchaseBoosterType, setPurchaseBoosterType] = useState<BoosterType | null>(null);
+  const [globalBoosters, setGlobalBoosters] = useState(() => {
+    const saved = localStorage.getItem('global_boosters');
+    if (saved) return JSON.parse(saved);
+    return { speed: false, value: false, lucky: false, harpoon: 0, net: 0, tnt: 0, anchor: 0 };
+  });
+
+  useEffect(() => {
+    const handleStorage = () => {
+      const saved = localStorage.getItem('global_boosters');
+      if (saved) setGlobalBoosters(JSON.parse(saved));
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
+  const handleBoosterPurchase = (pkg: PurchasePackage) => {
+    if (!purchaseBoosterType) return;
+    setGlobalBoosters((prev: Record<string, any>) => {
+      const next = { ...prev };
+      if (pkg.type === 'all') {
+        next.harpoon += pkg.amount;
+        next.net += pkg.amount;
+        next.tnt += pkg.amount;
+        next.anchor += pkg.amount;
+      } else {
+        next[purchaseBoosterType] += pkg.amount;
+      }
+      localStorage.setItem('global_boosters', JSON.stringify(next));
+      // Dispatch storage event for same-tab updates if necessary
+      window.dispatchEvent(new Event('storage'));
+      return next;
+    });
+  };
 
   const handleCardClick = (type: FishClass) => {
     setSelectedEntity(type);
@@ -198,19 +233,19 @@ export default function Home() {
               </span>
             </div>
 
-            {/* Treasure Chest Card */}
+            {/* Gold Doubloon Card */}
             <div
-              onClick={() => handleCardClick('treasure_chest')}
+              onClick={() => handleCardClick('gold_doubloon')}
               className="cursor-pointer flex-shrink-0 w-[120px] bg-[#FFF8E1] rounded-[16px] p-3 pt-4 flex flex-col items-center shadow-sm hover:scale-105 transition-transform duration-150 snap-center group"
             >
               <div className="w-[80px] h-[80px] flex items-center justify-center mb-2 relative">
                 <img
-                  src="/assets/environment/treasure_chest.png"
-                  alt="Treasure Chest"
+                  src="/assets/environment/gold_doubloon.png"
+                  alt="Gold Doubloon"
                   className="w-[96px] h-[72px] object-contain group-hover:scale-110 transition-all duration-300"
                 />
               </div>
-              <span className="text-sm font-bold text-slate-700">Treasure Chest</span>
+              <span className="text-sm font-bold text-slate-700">Gold Doubloon</span>
               <span className="text-xs font-bold text-primary bg-white/50 px-2 py-1 rounded-full mt-1">500 🪙</span>
             </div>
 
@@ -301,6 +336,48 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Global Shop Section */}
+        <div className="w-full mt-6 bg-slate-50 border-2 border-slate-100 rounded-2xl p-4">
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <Store className="w-5 h-5 text-slate-600" />
+            <h3 className="font-bold text-slate-700 text-sm tracking-wide">SUPPLY SHOP (Global)</h3>
+          </div>
+          <div className="flex gap-2 justify-center">
+            <button
+              onClick={() => setPurchaseBoosterType('harpoon')}
+              className="flex-1 flex flex-col items-center bg-white border-2 border-yellow-100 rounded-xl p-2 hover:bg-yellow-50 hover:border-yellow-200 transition-colors shadow-sm"
+            >
+              <Zap className="w-5 h-5 text-yellow-500 mb-1" />
+              <span className="text-[10px] font-bold text-slate-600">Harpoon</span>
+              <span className="text-xs font-black text-yellow-600 mt-0.5">{globalBoosters.harpoon}</span>
+            </button>
+            <button
+              onClick={() => setPurchaseBoosterType('net')}
+              className="flex-1 flex flex-col items-center bg-white border-2 border-blue-100 rounded-xl p-2 hover:bg-blue-50 hover:border-blue-200 transition-colors shadow-sm"
+            >
+              <ShoppingBag className="w-5 h-5 text-blue-500 mb-1" />
+              <span className="text-[10px] font-bold text-slate-600">Net</span>
+              <span className="text-xs font-black text-blue-600 mt-0.5">{globalBoosters.net}</span>
+            </button>
+            <button
+              onClick={() => setPurchaseBoosterType('tnt')}
+              className="flex-1 flex flex-col items-center bg-white border-2 border-red-100 rounded-xl p-2 hover:bg-red-50 hover:border-red-200 transition-colors shadow-sm"
+            >
+              <Bomb className="w-5 h-5 text-red-500 mb-1" />
+              <span className="text-[10px] font-bold text-slate-600">TNT</span>
+              <span className="text-xs font-black text-red-600 mt-0.5">{globalBoosters.tnt}</span>
+            </button>
+            <button
+              onClick={() => setPurchaseBoosterType('anchor')}
+              className="flex-1 flex flex-col items-center bg-white border-2 border-slate-200 rounded-xl p-2 hover:bg-slate-100 hover:border-slate-300 transition-colors shadow-sm"
+            >
+              <Anchor className="w-5 h-5 text-slate-500 mb-1" />
+              <span className="text-[10px] font-bold text-slate-600">Anchor</span>
+              <span className="text-xs font-black text-slate-600 mt-0.5">{globalBoosters.anchor}</span>
+            </button>
+          </div>
+        </div>
+
         <div className="w-full space-y-4 mt-8">
           <Link href="/game">
             <button className="w-full group relative overflow-hidden bg-primary text-white p-4 rounded-2xl font-bold text-xl shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.02] active:scale-[0.98]">
@@ -329,6 +406,15 @@ export default function Home() {
         <InfoCard
           entityKey={selectedEntity}
           onClose={() => setSelectedEntity(null)}
+        />
+      )}
+
+      {purchaseBoosterType && (
+        <BoosterPurchaseModal
+          isOpen={true}
+          onClose={() => setPurchaseBoosterType(null)}
+          boosterType={purchaseBoosterType}
+          onPurchase={handleBoosterPurchase}
         />
       )}
     </div>

@@ -1,4 +1,4 @@
-export type FishClass = 'bubble' | 'sakura' | 'zap' | 'candy' | 'moon' | 'lava' | 'crystal' | 'leaf' | 'tide' | 'mushroom' | 'king' | 'galaxy' | 'coral' | 'sea_kelp' | 'sea_kelp_horizontal' | 'sea_rock' | 'sea_rock_large' | 'treasure_chest' | 'whirlpool' | 'sunken_boat' | 'shark_skeleton' | 'env_bubbles' | 'anchor' | 'shell';
+export type FishClass = 'bubble' | 'sakura' | 'zap' | 'candy' | 'moon' | 'lava' | 'crystal' | 'leaf' | 'tide' | 'mushroom' | 'king' | 'galaxy' | 'coral' | 'sea_kelp' | 'sea_kelp_horizontal' | 'sea_rock' | 'sea_rock_large' | 'gold_doubloon' | 'whirlpool' | 'sunken_boat' | 'shark_skeleton' | 'env_bubbles' | 'anchor' | 'shell';
 
 // Lanet Sistemi: Her 10 seviyede bir özel kural aktive olur
 export type CurseType =
@@ -293,14 +293,14 @@ export const OBJECT_MATRIX: Record<FishClass, {
     aspectRatio: 1.4,
     isObstacle: true,
   },
-  treasure_chest: {
-    names: ['Treasure Chest'],
+  gold_doubloon: {
+    names: ['Gold Doubloon'],
     colors: ['#FFD700'],
-    speedMultiplier: 0,
-    weightMultiplier: 8,
-    value: 150,
-    radius: 70,
-    aspectRatio: 1.3,
+    speedMultiplier: 0.8, // Will float instead of staying static
+    weightMultiplier: 10,
+    value: 25, // Base value, dynamically calculated on catch
+    radius: 32,
+    aspectRatio: 1.0,
   },
   whirlpool: {
     names: ['Whirlpool'],

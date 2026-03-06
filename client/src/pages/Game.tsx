@@ -43,16 +43,24 @@ export default function Game() {
     hasFuel: false,
     storageCapacity: 60,
   });
-  const [activeBoosters, setActiveBoosters] = useState({
-    speed: false,
-    lucky: false,
-    value: false,
-    harpoon: 0,
-    net: 0,
-    tnt: 0,
-    anchor: 0,
+  const [activeBoosters, setActiveBoosters] = useState(() => {
+    const saved = localStorage.getItem('global_boosters');
+    if (saved) return JSON.parse(saved);
+    return {
+      speed: false,
+      value: false,
+      lucky: false,
+      harpoon: 0,
+      net: 0,
+      tnt: 0,
+      anchor: 0
+    };
   });
   const [selectedBooster, setSelectedBooster] = useState<'harpoon' | 'net' | 'tnt' | 'anchor' | null>(null);
+
+  useEffect(() => {
+    localStorage.setItem('global_boosters', JSON.stringify(activeBoosters));
+  }, [activeBoosters]);
 
   useEffect(() => {
     if (!canvasRef.current || !bgCanvasRef.current || gameState !== "playing") return;
@@ -137,7 +145,7 @@ export default function Game() {
         setCurrentLevel(level);
         if (state) {
           // Keep the existing boosters instead of resetting them
-          setActiveBoosters(prev => ({ ...prev }));
+          setActiveBoosters((prev: any) => ({ ...prev, speed: true }));
         }
         setSelectedBooster(null);
 
@@ -225,7 +233,7 @@ export default function Game() {
   const handlePurchase = (pkg: { type: 'all' | 'single', amount: number }) => {
     if (!purchaseBoosterType) return;
 
-    setActiveBoosters(prev => {
+    setActiveBoosters((prev: any) => {
       const next = { ...prev };
       if (pkg.type === 'all') {
         next.harpoon += pkg.amount;
@@ -235,7 +243,7 @@ export default function Game() {
       } else {
         next[purchaseBoosterType] += pkg.amount;
       }
-
+      localStorage.setItem('global_boosters', JSON.stringify(next));
       if (engineRef.current) {
         engineRef.current.getState().boosters = { ...next };
       }
@@ -511,7 +519,7 @@ export default function Game() {
                   <div className="w-20 h-14 mb-1 flex items-center justify-center relative">
                     <div className="absolute inset-0 bg-blue-100 rounded-full opacity-25 blur-lg scale-110 group-hover:scale-125 transition-transform animate-pulse"></div>
                     <img
-                      src={['coral', 'treasure_chest', 'whirlpool', 'sunken_boat', 'shark_skeleton', 'env_bubbles', 'anchor', 'shell', 'sea_kelp', 'sea_rock', 'sea_rock_large', 'sea_kelp_horizontal'].includes(caughtFish.type) ? `/assets/environment/${caughtFish.type === 'env_bubbles' ? 'bubbles' : caughtFish.type}.png` : `/assets/fish/${caughtFish.type}_fish.png`}
+                      src={['coral', 'gold_doubloon', 'whirlpool', 'sunken_boat', 'shark_skeleton', 'env_bubbles', 'anchor', 'shell', 'sea_kelp', 'sea_rock', 'sea_rock_large', 'sea_kelp_horizontal'].includes(caughtFish.type) ? `/assets/environment/${caughtFish.type === 'env_bubbles' ? 'bubbles' : caughtFish.type}.png` : `/assets/fish/${caughtFish.type}_fish.png`}
                       alt={caughtFish.name}
                       className="w-full h-full object-contain drop-shadow-md relative z-10 scale-125"
                       onError={(e) => { e.currentTarget.style.display = 'none'; }}

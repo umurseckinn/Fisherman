@@ -62,7 +62,7 @@ export const ASSETS = {
   'fish_sea_kelp_horizontal': '/assets/environment/sea_kelp.png',
   'fish_sea_rock': '/assets/environment/sea_rock.png',
   'fish_sea_rock_large': '/assets/environment/sea_rock.png',
-  'fish_treasure_chest': '/assets/environment/treasure_chest.png',
+  'fish_gold_doubloon': '/assets/environment/gold_doubloon.png',
   'fish_whirlpool': '/assets/environment/whirlpool.png',
   'fish_sunken_boat': '/assets/environment/sunken_boat.png',
   'fish_shark_skeleton': '/assets/environment/shark_skeleton.png',
