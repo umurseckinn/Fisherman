@@ -466,11 +466,23 @@ export class GameEngine {
     if (!config) return;
     const spawnStatic = (type: FishClass, count: number) => {
       for (let i = 0; i < count; i++) {
-        const y = type === 'sea_rock' && Math.random() < 0.4
-          ? SEA_LEVEL_Y + 120 + Math.random() * 200
-          : CANVAS_HEIGHT - 60 + Math.random() * 20;
-        const x = 40 + Math.random() * (CANVAS_WIDTH - 80);
         const configEntry = OBJECT_MATRIX[type];
+        let y = CANVAS_HEIGHT - 60 + Math.random() * 20;
+        let x = 40 + Math.random() * (CANVAS_WIDTH - 80);
+
+        // Special placement for specific types
+        if (type === 'sea_rock') {
+          // Keep some small rocks floating (user request)
+          y = SEA_LEVEL_Y + 150 + Math.random() * (CANVAS_HEIGHT - SEA_LEVEL_Y - 250);
+        } else if (type === 'sea_rock_large' || type === 'sea_kelp' || type === 'anchor' || type === 'coral') {
+          // Bottom dwelling objects anchored/embedded in sand
+          // We use CANVAS_HEIGHT - offset to ensure they sit on the bottom
+          y = CANVAS_HEIGHT - 5 - Math.random() * 5;
+        } else if (type === 'sea_kelp_horizontal') {
+          // Mid-to-upper water kelp (user request: rotated variant)
+          y = SEA_LEVEL_Y + 100 + Math.random() * 150;
+        }
+
         this.state.fishes.push({
           id: Math.random(),
           type,
@@ -489,7 +501,9 @@ export class GameEngine {
       }
     };
     spawnStatic('sea_kelp', config.obstacles.sea_kelp);
-    spawnStatic('sea_rock', config.obstacles.sea_rock);
+    spawnStatic('sea_kelp_horizontal', Math.ceil(config.obstacles.sea_kelp * 0.4)); // Add some floating ones
+    spawnStatic('sea_rock_large', config.obstacles.sea_rock);
+    spawnStatic('sea_rock', Math.ceil(config.obstacles.sea_rock * 0.6)); // Smaller floating ones
     spawnStatic('coral', config.obstacles.coral);
     spawnStatic('anchor', config.obstacles.anchor);
   }
@@ -2096,10 +2110,13 @@ export class GameEngine {
 
     // Position handling
     // Static objects shouldn't wobble and should be pivoted at bottom
-    const isStatic = type === 'coral' || type === 'sea_kelp' || type === 'sea_rock' || type === 'anchor' || type === 'shell' || type === 'treasure_chest' || type === 'sunken_boat';
+    const isStatic = type === 'coral' || type === 'sea_kelp' || type === 'sea_rock' || type === 'sea_rock_large' || type === 'anchor' || type === 'shell' || type === 'treasure_chest' || type === 'sunken_boat';
 
     if (isStatic) {
       this.ctx.translate(x, y);
+    } else if (type === 'sea_kelp_horizontal') {
+      this.ctx.translate(x, y);
+      this.ctx.rotate(-Math.PI / 2); // 90 degree left rotate
     } else {
       this.ctx.translate(x, y + wobble);
     }
@@ -2162,25 +2179,25 @@ export class GameEngine {
         const scaleTime = performance.now() * 0.002;
         const scaleY = 1.0 + Math.sin(scaleTime) * 0.03;
         this.ctx.scale(1, scaleY);
-      } else if (type === 'sea_kelp') {
+      } else if (type === 'sea_kelp' || type === 'sea_kelp_horizontal') {
         height = 100;
         width = height * ratio;
         offsetX = -width / 2;
-        offsetY = -height;
+        offsetY = type === 'sea_kelp_horizontal' ? -height / 2 : -height + 5;
 
         // Sway effect
-        const sway = Math.sin(performance.now() * 0.002) * 0.05;
+        const sway = Math.sin(performance.now() * 0.002) * (type === 'sea_kelp_horizontal' ? 0.02 : 0.05);
         this.ctx.rotate(sway);
-      } else if (type === 'sea_rock') {
-        height = 60;
+      } else if (type === 'sea_rock' || type === 'sea_rock_large') {
+        height = type === 'sea_rock' ? 40 : 120;
         width = height * ratio;
         offsetX = -width / 2;
-        offsetY = -height;
+        offsetY = -height + 5; // Buried in sand
       } else if (type === 'treasure_chest') {
-        height = 60;
+        height = 120; // 2x
         width = height * ratio;
         offsetX = -width / 2;
-        offsetY = -height; // Pivot bottom
+        offsetY = -height + 5; // Pivot bottom
       } else if (type === 'whirlpool') {
         height = 110;
         width = height * ratio;
@@ -2206,10 +2223,10 @@ export class GameEngine {
         offsetX = -width / 2;
         offsetY = -height / 2;
       } else if (type === 'anchor') {
-        height = 60;
+        height = 120; // 2x
         width = height * ratio;
         offsetX = -width / 2;
-        offsetY = -height; // Pivot bottom
+        offsetY = -height + 5; // Pivot bottom
       } else if (type === 'shell') {
         height = 20;
         width = height * ratio;
@@ -2238,7 +2255,7 @@ export class GameEngine {
     const config = OBJECT_MATRIX[entity.type];
     const ratio = config.aspectRatio || 1;
     let height = entity.radius * 4.5;
-    const isStatic = entity.type === 'coral' || entity.type === 'sea_kelp' || entity.type === 'sea_rock' || entity.type === 'anchor' || entity.type === 'shell' || entity.type === 'treasure_chest' || entity.type === 'sunken_boat';
+    const isStatic = entity.type === 'coral' || entity.type === 'sea_kelp' || entity.type === 'sea_rock' || entity.type === 'sea_rock_large' || entity.type === 'anchor' || entity.type === 'shell' || entity.type === 'treasure_chest' || entity.type === 'sunken_boat';
 
     // Match drawEntity logic constants
     if (entity.type === 'bubble') height = 72;
@@ -2248,14 +2265,15 @@ export class GameEngine {
       if (entity.type === 'king') height = 100;
       if (entity.type === 'galaxy') height = 90;
     } else if (entity.type === 'coral') height = 104;
-    else if (entity.type === 'sea_kelp') height = 100;
-    else if (entity.type === 'sea_rock') height = 60;
-    else if (entity.type === 'treasure_chest') height = 60;
+    else if (entity.type === 'sea_kelp' || entity.type === 'sea_kelp_horizontal') height = 100;
+    else if (entity.type === 'sea_rock') height = 40;
+    else if (entity.type === 'sea_rock_large') height = 120;
+    else if (entity.type === 'treasure_chest') height = 120;
     else if (entity.type === 'whirlpool') height = 110;
     else if (entity.type === 'sunken_boat') height = 120;
     else if (entity.type === 'shark_skeleton') height = 60;
     else if (entity.type === 'env_bubbles') height = 30;
-    else if (entity.type === 'anchor') height = 60;
+    else if (entity.type === 'anchor') height = 120;
     else if (entity.type === 'shell') height = 20;
 
     const width = height * ratio;
@@ -2264,9 +2282,19 @@ export class GameEngine {
     let rectX = entity.x - width / 2;
     let rectY = entity.y - height / 2;
 
-    if (isStatic) {
+    if (isStatic || entity.type === 'sea_kelp_horizontal') {
+      if (entity.type === 'sea_kelp_horizontal') {
+        // Rotated 90 deg left: width becomes height, height becomes width
+        // drawEntity logic: offsetX = -width/2, offsetY = -height/2, Rotate -90
+        const realW = height;
+        const realH = width;
+        rectX = entity.x - realW / 2;
+        rectY = entity.y - realH / 2;
+        return { x: rectX, y: rectY, width: realW, height: realH };
+      }
+
       // Pivot is bottom for most static objects in drawEntity
-      rectY = entity.y - height;
+      rectY = entity.y - height + 5;
       if (entity.type === 'sunken_boat') rectY = entity.y - height + 20;
     }
 

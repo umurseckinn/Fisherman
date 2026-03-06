@@ -1,4 +1,4 @@
-export type FishClass = 'bubble' | 'sakura' | 'zap' | 'candy' | 'moon' | 'lava' | 'crystal' | 'leaf' | 'tide' | 'mushroom' | 'king' | 'galaxy' | 'coral' | 'sea_kelp' | 'sea_rock' | 'treasure_chest' | 'whirlpool' | 'sunken_boat' | 'shark_skeleton' | 'env_bubbles' | 'anchor' | 'shell';
+export type FishClass = 'bubble' | 'sakura' | 'zap' | 'candy' | 'moon' | 'lava' | 'crystal' | 'leaf' | 'tide' | 'mushroom' | 'king' | 'galaxy' | 'coral' | 'sea_kelp' | 'sea_kelp_horizontal' | 'sea_rock' | 'sea_rock_large' | 'treasure_chest' | 'whirlpool' | 'sunken_boat' | 'shark_skeleton' | 'env_bubbles' | 'anchor' | 'shell';
 
 // Lanet Sistemi: Her 10 seviyede bir özel kural aktive olur
 export type CurseType =
@@ -252,14 +252,34 @@ export const OBJECT_MATRIX: Record<FishClass, {
     aspectRatio: 0.4, // Tall
     isObstacle: true,
   },
+  sea_kelp_horizontal: {
+    names: ['Floating Kelp'],
+    colors: ['#7ED957'],
+    speedMultiplier: 0,
+    weightMultiplier: 999,
+    value: 0,
+    radius: 28,
+    aspectRatio: 2.5, // Flipped
+    isObstacle: true,
+  },
   sea_rock: {
     names: ['Sea Rock'],
     colors: ['#8A9AA9'],
     speedMultiplier: 0,
     weightMultiplier: 999,
     value: 0,
-    radius: 30,
+    radius: 20, // Smaller for floating ones
     aspectRatio: 1.2,
+    isObstacle: true,
+  },
+  sea_rock_large: {
+    names: ['Large Sea Rock'],
+    colors: ['#8A9AA9'],
+    speedMultiplier: 0,
+    weightMultiplier: 999,
+    value: 0,
+    radius: 50,
+    aspectRatio: 1.4,
     isObstacle: true,
   },
   treasure_chest: {
@@ -268,7 +288,7 @@ export const OBJECT_MATRIX: Record<FishClass, {
     speedMultiplier: 0,
     weightMultiplier: 0,
     value: 150,
-    radius: 35,
+    radius: 70,
     aspectRatio: 1.3,
   },
   whirlpool: {
@@ -315,7 +335,7 @@ export const OBJECT_MATRIX: Record<FishClass, {
     speedMultiplier: 0,
     weightMultiplier: 0,
     value: 0,
-    radius: 30,
+    radius: 60,
     aspectRatio: 0.8,
   },
   shell: {
