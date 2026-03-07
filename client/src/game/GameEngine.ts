@@ -332,12 +332,6 @@ export class GameEngine {
 
     // 2. Handle non-aiming Boosters on tap
     if (booster && isIdle) {
-      if (booster === 'anchor') {
-        this.state.anchorEffectTimerMs = 10000;
-        this.onBoosterUsed('anchor');
-        this.effects.spawnSplash(CANVAS_WIDTH / 2, SEA_LEVEL_Y);
-        return;
-      }
 
       if (booster === 'net') {
         this.state.hook.state = booster;
@@ -425,6 +419,12 @@ export class GameEngine {
 
     requestAnimationFrame(this.loop);
   };
+
+  public activateAnchor() {
+    this.state.anchorEffectTimerMs = 20000;
+    this.onBoosterUsed('anchor');
+    this.effects.spawnSplash(CANVAS_WIDTH / 2, SEA_LEVEL_Y);
+  }
 
   public update(deltaTime: number) {
     if (!this.state.isPlaying || this.state.isPaused) return;
@@ -2150,8 +2150,8 @@ export class GameEngine {
       const sprite = this.spriteManager.getImage('rusty_anchor');
       if (sprite && sprite.complete && sprite.naturalWidth > 0) {
         // Calculate Y position based on how long it's been falling
-        // Total time is 10000ms. Assume it falls in the first 1000ms
-        const elapsed = 10000 - this.state.anchorEffectTimerMs;
+        // Total time is 20000ms. Assume it falls in the first 1000ms
+        const elapsed = 20000 - this.state.anchorEffectTimerMs;
         const startY = SEA_LEVEL_Y;
         const targetY = CANVAS_HEIGHT - 60; // Seabed
         let currentY = startY;
@@ -2643,15 +2643,7 @@ export class GameEngine {
         this.ctx.scale(popScale, popScale);
         this.ctx.drawImage(sprite, offsetX, offsetY, width, height);
 
-        // Add dynamic shine overlay directly via canvas compositing (gold specular highlight)
-        this.ctx.globalCompositeOperation = 'screen';
-        this.ctx.globalAlpha = Math.sin(time * 30) * 0.3 + 0.7; // Pulse transparency
-        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-        this.ctx.beginPath();
-        this.ctx.arc(0, 0, width * 0.35, 0, Math.PI * 2);
-        this.ctx.fill();
-        this.ctx.globalAlpha = 1;
-        this.ctx.globalCompositeOperation = 'source-over';
+        // Removed glow effect upon user request
       } else {
         this.ctx.drawImage(sprite, offsetX, offsetY, width, height);
       }

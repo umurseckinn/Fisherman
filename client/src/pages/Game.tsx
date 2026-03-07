@@ -162,7 +162,7 @@ export default function Game() {
         setTimeout(() => setCaughtFish(null), 2000);
       },
       onBoosterUsed: (type: 'harpoon' | 'net' | 'tnt' | 'anchor') => {
-        setActiveBoosters(prev => ({ ...prev, [type]: prev[type] - 1 }));
+        setActiveBoosters((prev: Record<string, any>) => ({ ...prev, [type]: prev[type] - 1 }));
         setSelectedBooster(null);
       }
     });
@@ -534,10 +534,10 @@ export default function Game() {
             {/* Booster Selection Buttons */}
             <div className="absolute right-4 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-3">
               {[
-                { id: 'harpoon', icon: Zap, label: 'Harpoon', count: activeBoosters.harpoon },
-                { id: 'net', icon: ShoppingBag, label: 'Net', count: activeBoosters.net },
-                { id: 'tnt', icon: Bomb, label: 'TNT', count: activeBoosters.tnt },
-                { id: 'anchor', icon: Anchor, label: 'Anchor', count: activeBoosters.anchor },
+                { id: 'harpoon', imageSrc: '/assets/boosters/harpoon.png', label: 'Harpoon', count: activeBoosters.harpoon },
+                { id: 'net', imageSrc: '/assets/boosters/net.png', label: 'Net', count: activeBoosters.net },
+                { id: 'tnt', imageSrc: '/assets/boosters/tnt.png', label: 'TNT', count: activeBoosters.tnt },
+                { id: 'anchor', imageSrc: '/assets/boosters/the_anchor.png', label: 'Anchor', count: activeBoosters.anchor },
               ].map((booster) => (
                 <button
                   key={booster.id}
@@ -550,17 +550,23 @@ export default function Game() {
                         setIsPaused(true);
                       }
                     } else {
-                      setSelectedBooster(prev => prev === booster.id ? null : booster.id as any);
+                      if (booster.id === 'anchor') {
+                        if (engineRef.current) {
+                          engineRef.current.activateAnchor();
+                        }
+                      } else {
+                        setSelectedBooster(prev => prev === booster.id ? null : booster.id as any);
+                      }
                     }
                   }}
-                  className={`relative w-12 h-12 flex items-center justify-center rounded-2xl border-2 transition-all shadow-lg ${booster.count === 0
-                    ? 'bg-slate-100 border-slate-200 text-slate-300 opacity-50 grayscale'
+                  className={`relative w-20 h-20 flex items-center justify-center transition-all ${booster.count === 0
+                    ? 'opacity-50 grayscale hover:scale-105'
                     : selectedBooster === booster.id
-                      ? 'bg-blue-500 border-white text-white scale-110'
-                      : 'bg-white border-blue-100 text-blue-500 hover:border-blue-300'
+                      ? 'scale-125 drop-shadow-[0_0_15px_rgba(59,130,246,0.8)]'
+                      : 'hover:scale-110 drop-shadow-md'
                     }`}
                 >
-                  <booster.icon className="w-6 h-6" />
+                  <img src={booster.imageSrc} alt={booster.label} className="w-24 h-24 max-w-none object-contain scale-125 hover:scale-150 transition-transform origin-center" />
                   <span className="absolute -bottom-1 -right-1 bg-red-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-bold border border-white">
                     {booster.count}
                   </span>
