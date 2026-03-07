@@ -27,12 +27,6 @@ jobs:
     - name: Install Capacitor
       run: npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/ios@6
 
-    - name: Initialize Capacitor
-      run: npx cap init "Fishermans Journey" com.fishermans.journey --web-dir dist/public
-
-    - name: Add iOS Platform
-      run: npx cap add ios
-
     - name: Sync iOS Project
       run: npx cap sync ios
 

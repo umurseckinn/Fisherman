@@ -1,6 +1,5 @@
 {
     "appId": "com.fishermans.journey",
     "appName": "Fishermans Journey",
-    "webDir": "dist/public",
-    "bundledWebRuntime": false
+    "webDir": "dist/public"
 }
